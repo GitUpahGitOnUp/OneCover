@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/OneCover.api/">
+    <Project Path="OneCover.api/OneCover.Api.csproj" />
+  </Folder>
+  <Project Path="OneCover.Tests/OneCover.Tests.csproj" />
+</Solution>
