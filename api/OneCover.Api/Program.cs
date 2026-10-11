@@ -13,7 +13,13 @@ builder.Services.AddDbContext<AppDbContext>(o => o.UseSqlServer(builder.Configur
 
 var app = builder.Build();
 
+
 // Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    await DbSeeder.SeedAsync(app.Services);
+}
+    
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
