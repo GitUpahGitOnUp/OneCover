@@ -17,8 +17,8 @@ public class GlobalExceptionHandler(
     public async ValueTask<bool> TryHandleAsync(HttpContext http, Exception ex, CancellationToken ct)
     {
         // "expected" = one of OUR exceptions, w/ a message that's written to be safe to show the user
-        // 'is A or B' is pattern matching: is this exception either of these two types?
-        var isExpected = ex is NotFoundException or BusinessRuleException;
+        // 'is A or B or C' is pattern matching: is this exception either of these three types?
+        var isExpected = ex is NotFoundException or BusinessRuleException or UnauthorizedException;
 
         if (!isExpected) logger.LogError(ex, "Unhandled exception"); // full deets + stack trace, server side only
 
@@ -28,6 +28,7 @@ public class GlobalExceptionHandler(
         {
             NotFoundException => StatusCodes.Status404NotFound,
             BusinessRuleException => StatusCodes.Status400BadRequest,
+            UnauthorizedException => StatusCodes.Status401Unauthorized,
             // _ (underscore) is the "discard" pattern = anything else. like 'default:' in a regular switch.
             // has to go last since it matches everything
             _                 => StatusCodes.Status500InternalServerError 

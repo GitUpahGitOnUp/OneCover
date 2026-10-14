@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using OneCover.Api.Errors;
 using OneCover.Api.Services;
-
+using OneCover.Api.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +37,11 @@ builder.Services.AddHttpContextAccessor();
 // "when something asks for ICurrentUser, give it a CurrentUser". scoped = a new one per request,
 // since every request has its own logged-in user
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+
+// "when something asks for IUserRepository, give it a UserRepository". scoped b/c it uses AppDbContext,
+// which is one per request, and a service can't safely outlive what it depends on
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
 // fail fast: if the key were ever missing the ?? throw fails at startup w/ a message stating the exact fix needed
 var jwtKey = builder.Configuration["Jwt:Key"] 
         ?? throw new InvalidOperationException("Jwt:Key is not configured. Set it with dotnet user-secrets.");
