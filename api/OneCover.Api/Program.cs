@@ -42,6 +42,8 @@ builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 // which is one per request, and a service can't safely outlive what it depends on
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
+builder.Services.AddScoped<IAuthService, AuthService>();
+
 // fail fast: if the key were ever missing the ?? throw fails at startup w/ a message stating the exact fix needed
 var jwtKey = builder.Configuration["Jwt:Key"] 
         ?? throw new InvalidOperationException("Jwt:Key is not configured. Set it with dotnet user-secrets.");
