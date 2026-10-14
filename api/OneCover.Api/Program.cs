@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using OneCover.Api.Errors;
+using OneCover.Api.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,6 +31,12 @@ builder.Services.AddProblemDetails(); // AddProb... registers IProblemDetailsSer
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>(); // AddExce.... tells ASP.NET Core to call this class when an exception escapes
 
+// lets classes like CurrentUser see the current HTTP request (services normally can't)
+builder.Services.AddHttpContextAccessor();
+
+// "when something asks for ICurrentUser, give it a CurrentUser". scoped = a new one per request,
+// since every request has its own logged-in user
+builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 // fail fast: if the key were ever missing the ?? throw fails at startup w/ a message stating the exact fix needed
 var jwtKey = builder.Configuration["Jwt:Key"] 
         ?? throw new InvalidOperationException("Jwt:Key is not configured. Set it with dotnet user-secrets.");
