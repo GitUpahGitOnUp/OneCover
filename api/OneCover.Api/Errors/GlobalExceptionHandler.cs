@@ -1,3 +1,12 @@
+// ── ANATOMY ──────────────────────────────────────────────────────────────────────────────
+// What:     the one place every escaped exception gets turned into a consistent ProblemDetails JSON response
+// Layer:    Errors / middleware. sits outermost in the pipeline (app.UseExceptionHandler() is first)
+// Concepts: INTERFACE (implements the framework's IExceptionHandler), DEPENDENCY INJECTION (2 injected services),
+//           POLYMORPHISM (switch on the exception's real type), pattern matching (is A or B, the _ discard),
+//           separation of concerns (services throw, only this knows HTTP status codes), log on server / hide from client
+// Related:  NotFoundException / BusinessRuleException / UnauthorizedException,
+//           Program.cs (AddProblemDetails + AddExceptionHandler register it, UseExceptionHandler turns it on)
+// ─────────────────────────────────────────────────────────────────────────────────────────
 using Microsoft.AspNetCore.Diagnostics;
 
 namespace OneCover.Api.Errors;

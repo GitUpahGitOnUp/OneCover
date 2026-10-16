@@ -1,3 +1,10 @@
+// ── ANATOMY ──────────────────────────────────────────────────────────────────────────────
+// What:     REPOSITORY INTERFACE = the contract for getting users in + out of the database
+// Layer:    Repositories (data access). services call this, it's the only path to user data
+// Concepts: ABSTRACTION (services see "get user by email", not SQL or EF), single responsibility (data access only),
+//           testability (a FakeUserRepository w/ a List<User> could stand in, polymorphism)
+// Related:  UserRepository (EF Core implementation), AuthService (the caller), Program.cs (AddScoped)
+// ─────────────────────────────────────────────────────────────────────────────────────────
 using OneCover.Api.Models;
 
 namespace OneCover.Api.Repositories;

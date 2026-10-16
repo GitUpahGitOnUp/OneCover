@@ -1,3 +1,11 @@
+// ── ANATOMY ──────────────────────────────────────────────────────────────────────────────
+// What:     fills an empty dev database w/ demo data: 5 plans + 3 users (admin, FMLA-eligible member, new hire)
+// Layer:    Data. runs once at startup, not part of handling requests
+// Concepts: static class (no state, never instantiated), async/await (AnyAsync, SaveChangesAsync = DB I/O),
+//           DI scopes (CreateScope + GetRequiredService = asking the container manually at startup),
+//           object initializers (new Plan { ... }), password hashing (salted, so seeded here, not w/ HasData)
+// Related:  Program.cs (calls SeedAsync, Development only), AppDbContext, Plan, User, Role/PlanType enums
+// ─────────────────────────────────────────────────────────────────────────────────────────
 using Microsoft.EntityFrameworkCore;
 using OneCover.Api.Models;
 using OneCover.Api.Models.Enums;

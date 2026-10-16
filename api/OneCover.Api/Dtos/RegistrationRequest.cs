@@ -1,3 +1,11 @@
+// ── ANATOMY ──────────────────────────────────────────────────────────────────────────────
+// What:     DTO for the sign-up request (the JSON body of POST /api/auth/register)
+// Layer:    Dtos, the API boundary
+// Concepts: RECORD + validation attributes (max lengths match the DB columns). nullable + [Required] on value types
+//           (DateOnly?, decimal?, int?): a plain decimal silently becomes 0 when missing, nullable lets [Required] catch it.
+//           SECURITY: no Role property, so nobody can register as Admin (extra JSON fields are ignored)
+// Related:  AuthController.Register, AuthService.RegisterAsync (maps it onto a new User entity), User
+// ─────────────────────────────────────────────────────────────────────────────────────────
 using System.ComponentModel.DataAnnotations;
 
 namespace OneCover.Api.Dtos;

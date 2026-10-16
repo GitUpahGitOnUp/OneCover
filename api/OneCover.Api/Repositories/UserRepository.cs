@@ -1,3 +1,10 @@
+// ── ANATOMY ──────────────────────────────────────────────────────────────────────────────
+// What:     the EF Core implementation of IUserRepository. each method = one EF query or one save
+// Layer:    Repositories (data access), the only layer that touches AppDbContext
+// Concepts: implements an INTERFACE, DEPENDENCY INJECTION (AppDbContext), LINQ -> SQL translation,
+//           change tracker (Add marks, SaveChangesAsync sends), scoped lifetime (matches the DbContext's)
+// Related:  IUserRepository, AppDbContext.Users, AuthService, Program.cs (AddScoped<IUserRepository, UserRepository>)
+// ─────────────────────────────────────────────────────────────────────────────────────────
 using OneCover.Api.Data;
 using OneCover.Api.Models;
 using Microsoft.EntityFrameworkCore;
