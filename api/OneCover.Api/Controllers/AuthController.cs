@@ -10,6 +10,7 @@
 using Microsoft.AspNetCore.Mvc;
 using OneCover.Api.Dtos;
 using OneCover.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace OneCover.Api.Controllers;
 
@@ -19,7 +20,7 @@ namespace OneCover.Api.Controllers;
 [Route("api/auth")] // base URL for every action in this controller
 
 // IAuthService: injected by DI, the controller only knows the interface
-public class AuthController(IAuthService auth) : ControllerBase
+public class AuthController(IAuthService auth, ICurrentUser currentUser) : ControllerBase
 // : ControllerBase give helpers like Ok(), NotFound(), Created(). and used instead of 'Controller' which adds web page views
 {
         // POST for login vs GET
@@ -34,4 +35,14 @@ public class AuthController(IAuthService auth) : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult<AuthResponse>> Register(RegistrationRequest request) => 
         Ok(await auth.RegisterAsync(request));
+
+    // **TEMPORARY !! ** : proves JWT auth + ICurrentUser work. REMOVE once real protected endpoints exist ! **** 
+    [Authorize]
+    [HttpGet("whoami")]
+    public IActionResult WhoAmI() => Ok(new { currentUser.UserId, currentUser.IsAdmin});
+
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("admin-check")]
+    public IActionResult AdminCheck() => Ok(new {message = "You're an admin."});
 }

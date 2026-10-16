@@ -18,14 +18,15 @@ using Microsoft.IdentityModel.Tokens;
 using OneCover.Api.Errors;
 using OneCover.Api.Services;
 using OneCover.Api.Repositories;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // --- services: register everything the DI container needs to know about ---
 
 // controllers, plus send enums as text in JSON ("InReview", not 1) so Angular gets readable values
-builder.Services.AddControllers().AddJsonOptions(o => 
-        o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+builder.Services.AddControllers(o => o.Filters.Add(new ProducesAttribute("application/json")))
+        .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddOpenApi();
 
