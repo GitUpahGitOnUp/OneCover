@@ -20,7 +20,7 @@ namespace OneCover.Api.Controllers;
 [Route("api/auth")] // base URL for every action in this controller
 
 // IAuthService: injected by DI, the controller only knows the interface
-public class AuthController(IAuthService auth, ICurrentUser currentUser) : ControllerBase
+public class AuthController(IAuthService auth) : ControllerBase
 // : ControllerBase give helpers like Ok(), NotFound(), Created(). and used instead of 'Controller' which adds web page views
 {
         // POST for login vs GET
@@ -39,9 +39,9 @@ public class AuthController(IAuthService auth, ICurrentUser currentUser) : Contr
     // **TEMPORARY !! ** : proves JWT auth + ICurrentUser work. REMOVE once real protected endpoints exist ! **** 
     [Authorize]
     [HttpGet("whoami")]
-    public IActionResult WhoAmI() => Ok(new { currentUser.UserId, currentUser.IsAdmin});
+    public IActionResult WhoAmI([FromServices] ICurrentUser currentUser) => Ok(new { currentUser.UserId, currentUser.IsAdmin});
 
-
+    // **TEMPORARY !! ** : proves role-based [Authorize(Roles = "Admin")] works. REMOVE once real protected endpoints exist ! **** 
     [Authorize(Roles = "Admin")]
     [HttpGet("admin-check")]
     public IActionResult AdminCheck() => Ok(new {message = "You're an admin."});
