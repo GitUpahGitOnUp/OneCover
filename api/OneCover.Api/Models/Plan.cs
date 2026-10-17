@@ -1,3 +1,11 @@
+// ── ANATOMY ──────────────────────────────────────────────────────────────────────────────
+// What:     entity for a coverage product (one row in Plans)
+// Layer:    Models (domain)
+// Concepts: plain { get; set; } everywhere = no encapsulation needed, admins can edit any field (no rules to protect).
+//           one class for all plan types instead of inheritance (DisabilityPlan : Plan), simpler on purpose
+// Related:  PlanType enum, Enrollment (many enrollments -> one plan), AppDbContext.Plans, DbSeeder (5 plans),
+//           IPlanRepository / PlanService (Day 4)
+// ─────────────────────────────────────────────────────────────────────────────────────────
 using OneCover.Api.Models.Enums;
 
 namespace OneCover.Api.Models;
@@ -16,6 +24,7 @@ public class Plan
 
     public string Description { get; set; } = string.Empty;
 
+    // decimal(18,2) in SQL, set once for every decimal in AppDbContext.ConfigureConventions
     public decimal MonthlyPremium { get; set; }
 
     /// <summary>
@@ -34,5 +43,6 @@ public class Plan
 
     /// <summary>False when an admin retires the plan. Retired plans are hidden from members
     ///  but kept in the database.</summary>
+    // sensible default: a new plan starts active (a bool would otherwise default to false = born retired)
     public bool IsActive { get; set; } = true;
 }

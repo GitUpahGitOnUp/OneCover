@@ -1,3 +1,14 @@
+// ── ANATOMY ──────────────────────────────────────────────────────────────────────────────
+// What:     the DbContext = EF Core's working session w/ the database. describes the tables + rules, runs
+//           queries, tracks changes (change tracker) and saves them. NOT the database itself
+// Layer:    Data. only repositories talk to it, services never do
+// Concepts: INHERITANCE (: DbContext gets all of EF's querying/tracking/saving for free),
+//           POLYMORPHISM (overrides DbContext's virtual methods, EF calls them, our versions run),
+//           DEPENDENCY INJECTION (options come in through the constructor), CODE FIRST (migrations read this
+//           file to generate the SQL that creates the tables), Fluent API + builder pattern
+// Related:  Program.cs (AddDbContext registers it, scoped = one per request), Models/ (the entities),
+//           Data/Migrations (generated from this), UserRepository (uses it), DbSeeder (fills it)
+// ─────────────────────────────────────────────────────────────────────────────────────────
 using Microsoft.EntityFrameworkCore;
 using OneCover.Api.Models;
 
@@ -9,6 +20,8 @@ namespace OneCover.Api.Data;
 /// <param name="options">Which database and how to connect. Provided by DI from Program.cs.</param>
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
+    // one DbSet per table. the property name becomes the table name (Users, Plans...).
+    // DbSet<T> = generic type, "a set of T entities". at runtime it's your handle for querying + adding rows
     public DbSet<User> Users => Set<User>();
 
     public DbSet<Plan> Plans => Set<Plan>();
@@ -22,6 +35,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Payment> Payments => Set<Payment>();
 
     // rules by type are written once and applied to every matching property in every entity
+    // protected override = replacing DbContext's version of this method w/ ours (polymorphism). DRY: can't forget one
     protected override void ConfigureConventions(ModelConfigurationBuilder builder)
     {
         builder.Properties<decimal>().HavePrecision(18, 2);
@@ -29,6 +43,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     }
 
     // rules for specific properties and relationships that conventions of EF Core can't infer
+    // b = ModelBuilder (builder pattern), each call describes one rule. runs once per app run, then the model is cached
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Plan>().Property(p => p.Name).HasMaxLength(100);
@@ -36,8 +51,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         b.Entity<ClaimStatusHistory>().Property(csh => csh.Note).HasMaxLength(1000);
         b.Entity<BenefitClaim>().Property(bc => bc.Reason).HasMaxLength(1000);
 
+        // grouped config: user = the builder for User, u = a User object pointing at which property
         b.Entity<User>(user =>
         {
+            // unique index = fast lookups by email AND a DB-level rule: no duplicate accounts
             user.HasIndex(u => u.Email).IsUnique();
             user.Property(u => u.Email).HasMaxLength(256);
             user.Property(u => u.SsnLast4).HasMaxLength(4).IsFixedLength();

@@ -1,3 +1,10 @@
+// ── ANATOMY ──────────────────────────────────────────────────────────────────────────────
+// What:     DTO for the login request: what comes IN from the client (the JSON body of POST /api/auth/login)
+// Layer:    Dtos, the API boundary
+// Concepts: RECORD w/ init properties (can't change after arrival), validation attributes
+//           ([Required], [EmailAddress]) = "validate at the edges", checked automatically by [ApiController]
+// Related:  AuthController.Login (receives it), AuthService.LoginAsync (uses it)
+// ─────────────────────────────────────────────────────────────────────────────────────────
 using System.ComponentModel.DataAnnotations;
 
 namespace OneCover.Api.Dtos;

@@ -1,3 +1,12 @@
+// ── ANATOMY ──────────────────────────────────────────────────────────────────────────────
+// What:     the implementation of ICurrentUser. reads the id + role claims out of the JWT on this request
+// Layer:    Services
+// Concepts: implements an INTERFACE (: ICurrentUser), DEPENDENCY INJECTION (IHttpContextAccessor),
+//           ENCAPSULATION (claim names + string->int parsing hidden in here), expression-bodied properties (=>),
+//           fail fast (clear error if used w/o [Authorize]), scoped lifetime (one per request = one user per request)
+// Related:  ICurrentUser, AuthService.CreateToken (puts these claims IN the token), Program.cs
+//           (AddHttpContextAccessor + AddScoped), JWT middleware (builds the ClaimsPrincipal this reads)
+// ─────────────────────────────────────────────────────────────────────────────────────────
 using System.Security.Claims;
 
 namespace OneCover.Api.Services;

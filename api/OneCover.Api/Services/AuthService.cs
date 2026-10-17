@@ -1,3 +1,12 @@
+// ── ANATOMY ──────────────────────────────────────────────────────────────────────────────
+// What:     registers members + logs users in: hashes/verifies passwords, builds the signed JWT
+// Layer:    Services (business logic). controller above it, repository below it
+// Concepts: implements an INTERFACE (: IAuthService), DEPENDENCY INJECTION (3 injected deps),
+//           ABSTRACTION (only knows IUserRepository, never EF Core), ENCAPSULATION (private CreateToken +
+//           NormalizeEmail), async/await on DB calls, password hashing, JWT creation, throwing typed exceptions
+// Related:  IAuthService, IUserRepository, User, Dtos/, BusinessRuleException + UnauthorizedException,
+//           Program.cs (JWT settings it signs w/ are the same ones the middleware validates), CurrentUser (reads the claims)
+// ─────────────────────────────────────────────────────────────────────────────────────────
 using Microsoft.AspNetCore.Identity;
 using OneCover.Api.Dtos;
 using OneCover.Api.Models;

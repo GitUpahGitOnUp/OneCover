@@ -1,3 +1,14 @@
+// ── ANATOMY ──────────────────────────────────────────────────────────────────────────────
+// What:     the app's entry point + composition root: where every piece gets wired together
+// Layer:    startup. runs once when the app starts, then the pipeline handles every request
+// Concepts: two halves, split at builder.Build():
+//             1. builder.Services.AddX(...) = register services in the DI CONTAINER (interface -> class, lifetime)
+//             2. app.UseX() = build the MIDDLEWARE PIPELINE (order matters, outermost first)
+//           service lifetimes: Singleton (one for the app), Scoped (one per request), builder pattern,
+//           layered configuration (appsettings -> appsettings.Development -> user-secrets -> env vars), fail fast
+// Related:  every AddScoped line points to an interface + class pair (ICurrentUser/CurrentUser,
+//           IUserRepository/UserRepository, IAuthService/AuthService), AppDbContext, GlobalExceptionHandler, DbSeeder
+// ─────────────────────────────────────────────────────────────────────────────────────────
 using Microsoft.EntityFrameworkCore;
 using OneCover.Api.Data;
 using System.Text;
@@ -13,8 +24,8 @@ var builder = WebApplication.CreateBuilder(args);
 // --- services: register everything the DI container needs to know about ---
 
 // controllers, plus send enums as text in JSON ("InReview", not 1) so Angular gets readable values
-builder.Services.AddControllers().AddJsonOptions(o => 
-        o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+builder.Services.AddControllers()
+        .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddOpenApi();
 
@@ -74,6 +85,9 @@ var app = builder.Build();
 
 // placed here first in the pipeline so it catches errors from everything after it
 app.UseExceptionHandler();
+
+// turns any empty error response (like JWT middleware's bare 401) into a standard ProblemDetails body.
+app.UseStatusCodePages();
 
 // dev only: fill an empty DB with demo plans + users
 if (app.Environment.IsDevelopment())

@@ -1,3 +1,11 @@
+// ── ANATOMY ──────────────────────────────────────────────────────────────────────────────
+// What:     INTERFACE for authentication: register + login. both return an AuthResponse (token + role)
+// Layer:    Services (business logic), called by AuthController
+// Concepts: ABSTRACTION (the controller only knows this contract), async (Task<T> = result arrives later),
+//           DTOs in and out (never entities)
+// Related:  AuthService (implementation), AuthController (caller), Dtos/ (RegistrationRequest, LoginRequest,
+//           AuthResponse), Program.cs (AddScoped<IAuthService, AuthService>)
+// ─────────────────────────────────────────────────────────────────────────────────────────
 using OneCover.Api.Dtos;
 
 namespace OneCover.Api.Services;

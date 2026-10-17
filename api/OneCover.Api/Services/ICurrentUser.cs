@@ -1,3 +1,11 @@
+// ── ANATOMY ──────────────────────────────────────────────────────────────────────────────
+// What:     INTERFACE = a contract. lists what a "current user" provides (UserId, IsAdmin), no code, no data
+// Layer:    Services (cross-cutting: any service that needs to know who's logged in asks for this)
+// Concepts: ABSTRACTION (depend on the "what", not the "how"), DEPENDENCY INJECTION (injected wherever needed),
+//           security rule: the user id ALWAYS comes from the JWT, never the URL or request body
+// Related:  CurrentUser (the implementation), Program.cs (AddScoped<ICurrentUser, CurrentUser>),
+//           AuthController.WhoAmI (step 10), every member-facing service on Day 4
+// ─────────────────────────────────────────────────────────────────────────────────────────
 namespace OneCover.Api.Services;
 
 /// <summary>

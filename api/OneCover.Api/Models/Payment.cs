@@ -1,3 +1,14 @@
+// ── ANATOMY ──────────────────────────────────────────────────────────────────────────────
+// What:     entity for money moving between a member and the insurer (one row in Payments)
+// Layer:    Models (domain)
+// Concepts: all 3 kinds of setter in one class:
+//             init        = facts fixed at creation (who, how much, when due), money records are never edited
+//             private set = changes, but only through this class's own methods (MarkPaid/MarkFailed, Day 5)
+//             set         = Id + navigations, EF Core fills those in
+//           optional relationships: int? FK + nullable navigation (no = null!). each payment uses exactly one
+// Related:  PaymentType, PaymentStatus, Enrollment (premiums), BenefitClaim (benefits), User,
+//           EnrollmentService (creates premium payments, Day 4), claim approval (creates benefit payments, Day 5)
+// ─────────────────────────────────────────────────────────────────────────────────────────
 using OneCover.Api.Models.Enums;
 
 namespace OneCover.Api.Models;
@@ -30,5 +41,6 @@ public class Payment
     /// <summary>When the payment went through. Only set when Status is Paid.</summary>
     public DateOnly? PaidDate { get; private set; }
 
+    // rule to protect: Paid always comes w/ a PaidDate, and a Paid payment never goes back to Pending
     public PaymentStatus Status { get; private set; } = PaymentStatus.Pending;
 }
