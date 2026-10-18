@@ -46,7 +46,8 @@ public class EnrollmentService(
         var enrollment = new Enrollment
         {
             UserId = userId,
-            Plan = plan,          // navigation: EF fills in PlanId, and ToDto() can read the plan's name
+            Plan = plan,          // navigation: EF fills in PlanId, and ToDto() can read the plan's name.
+                                  // safe ONLY b/c plans.GetByIdAsync returns a TRACKED plan (see PlanRepository)
             EnrolledOn = today    // Status defaults to Active
         };
 

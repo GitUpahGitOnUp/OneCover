@@ -32,7 +32,9 @@ public class PlanRepository(AppDbContext db) : IPlanRepository
             .ToListAsync();
 
     // SELECT TOP(1) ... WHERE Id = @id. null if no match. no async/await: FirstOrDefaultAsync already
-    // returns exactly Task<Plan?>, so we just hand it back
+    // returns exactly Task<Plan?>, so we just hand it back.
+    // MUST STAY TRACKED (no AsNoTracking): PlanService's update/retire rely on the change tracker, and
+    // EnrollmentService links a new enrollment w/ "Plan = plan". a detached plan there would get inserted as NEW
     public Task<Plan?> GetByIdAsync(int id) => db.Plans.FirstOrDefaultAsync(p => p.Id == id);
 
     // marks a new plan for INSERT in the change tracker. nothing goes to SQL Server yet

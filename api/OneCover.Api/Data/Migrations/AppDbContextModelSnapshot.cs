@@ -17,7 +17,7 @@ namespace OneCover.Api.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -137,7 +137,9 @@ namespace OneCover.Api.Data.Migrations
 
                     b.HasIndex("PlanId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "PlanId")
+                        .IsUnique()
+                        .HasFilter("[Status] = 'Active'");
 
                     b.ToTable("Enrollments");
                 });
