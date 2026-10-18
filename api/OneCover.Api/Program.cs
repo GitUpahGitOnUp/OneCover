@@ -38,7 +38,6 @@ builder.Services.AddDbContext<AppDbContext>(o =>
 builder.Services.AddSingleton(TimeProvider.System);
 
 // one place that turns exceptions into consistent ProblemDetails error responses
-
 builder.Services.AddProblemDetails(); // AddProb... registers IProblemDetailsService, what the handler receives in its constructor and uses to write JSON
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>(); // AddExce.... tells ASP.NET Core to call this class when an exception escapes
@@ -57,7 +56,10 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 // same idea for plans: IPlanRepository -> PlanRepository, scoped for the same reason (it uses AppDbContext)
 builder.Services.AddScoped<IPlanRepository, PlanRepository>();
 
+// services (business logic): scoped b/c they depend on scoped repositories
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services.AddScoped<IPlanService, PlanService>();
 
 // fail fast: if the key were ever missing the ?? throw fails at startup w/ a message stating the exact fix needed
 var jwtKey = builder.Configuration["Jwt:Key"] 
