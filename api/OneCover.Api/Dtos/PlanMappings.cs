@@ -44,7 +44,8 @@ public static class PlanMappings
     {
         plan.Name = request.Name.Trim();
         plan.Type = request.Type!.Value;
-        plan.Description = request.Description.Trim();
+        // Description is optional (string?): ?. = "only call Trim() if it's not null", ?? = "if null, use empty"
+        plan.Description = request.Description?.Trim() ?? string.Empty;
         plan.MonthlyPremium = request.MonthlyPremium!.Value; // all of the '!' are safe as [Required] already ran
         plan.BenefitPercent = request.BenefitPercent!.Value;
         plan.WeeklyMaximum = request.WeeklyMaximum!.Value;

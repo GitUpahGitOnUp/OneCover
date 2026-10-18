@@ -18,12 +18,15 @@ namespace OneCover.Api.Repositories;
 public class PlanRepository(AppDbContext db) : IPlanRepository
 {
     // the query is BUILT step by step, then RUN once at ToListAsync (deferred execution):
+    //   .AsNoTracking()          -> read-only: skip the change tracker (no snapshots to compare on save).
+    //                               faster + less memory. only safe b/c nothing here gets edited and saved
     //   .Where(p => p.IsActive)  -> filter:  WHERE IsActive = 1
     //   .OrderBy(p => p.Name)    -> sort:    ORDER BY Name   (SQL has no guaranteed order w/o this)
     //   .ToListAsync()           -> RUN it, load the rows as Plan objects into a List
     // async/await needed here: ToListAsync returns Task<List<Plan>>, but we promised Task<IReadOnlyList<Plan>>.
     // C# won't convert one Task type to another, so await unwraps the List (which IS an IReadOnlyList)
     public async Task<IReadOnlyList<Plan>> GetActiveAsync() => await db.Plans
+            .AsNoTracking()
             .Where(p => p.IsActive)
             .OrderBy(p => p.Name)
             .ToListAsync();
