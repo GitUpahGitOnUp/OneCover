@@ -7,7 +7,8 @@
 //           service lifetimes: Singleton (one for the app), Scoped (one per request), builder pattern,
 //           layered configuration (appsettings -> appsettings.Development -> user-secrets -> env vars), fail fast
 // Related:  every AddScoped line points to an interface + class pair (ICurrentUser/CurrentUser,
-//           IUserRepository/UserRepository, IAuthService/AuthService), AppDbContext, GlobalExceptionHandler, DbSeeder
+//           IUserRepository/UserRepository, IPlanRepository/PlanRepository, IAuthService/AuthService),
+//           AppDbContext, GlobalExceptionHandler, DbSeeder
 // ─────────────────────────────────────────────────────────────────────────────────────────
 using Microsoft.EntityFrameworkCore;
 using OneCover.Api.Data;
@@ -52,6 +53,9 @@ builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 // "when something asks for IUserRepository, give it a UserRepository". scoped b/c it uses AppDbContext,
 // which is one per request, and a service can't safely outlive what it depends on
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+// same idea for plans: IPlanRepository -> PlanRepository, scoped for the same reason (it uses AppDbContext)
+builder.Services.AddScoped<IPlanRepository, PlanRepository>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 
