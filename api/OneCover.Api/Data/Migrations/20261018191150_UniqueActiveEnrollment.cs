@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace OneCover.Api.Data.Mirgrations
+namespace OneCover.Api.Data.Migrations
 {
     /// <inheritdoc />
     public partial class UniqueActiveEnrollment : Migration

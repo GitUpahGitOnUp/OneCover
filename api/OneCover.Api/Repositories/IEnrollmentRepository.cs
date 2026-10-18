@@ -1,8 +1,8 @@
 // ── ANATOMY ──────────────────────────────────────────────────────────────────────────────
 // What:     REPOSITORY INTERFACE for enrollments
 // Layer:    Repositories (data access)
-// Concepts: ABSTRACTION, single responsibility, YAGNI (only the queries enrolling + "my coverage" need.
-//           Claims (C) will add a lookup when it needs one)
+// Concepts: ABSTRACTION, single responsibility, YAGNI (only the queries enrolling, "my coverage" and
+//           filing a claim actually need)
 // Related:  EnrollmentRepository (implementation), EnrollmentService (caller), Program.cs (AddScoped)
 // ─────────────────────────────────────────────────────────────────────────────────────────
 using OneCover.Api.Models;
@@ -14,6 +14,9 @@ public interface IEnrollmentRepository
 {
     /// <summary>A member's enrollments with their Plan loaded, newest first.</summary>
     Task<IReadOnlyList<Enrollment>> GetByUserAsync(int userId);
+
+    /// <summary>One enrollment, or null. Used by ClaimService to check the member owns it before filing a claim.</summary>
+    Task<Enrollment?> GetByIdAsync(int id);
 
     /// <summary>True if the member already has an ACTIVE enrollment in this plan.</summary>
     Task<bool> HasActiveEnrollmentAsync(int userId, int planId);

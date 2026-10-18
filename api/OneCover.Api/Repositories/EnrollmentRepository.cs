@@ -26,6 +26,12 @@ public class EnrollmentRepository(AppDbContext db) : IEnrollmentRepository
             .OrderByDescending(e => e.EnrolledOn)
             .ToListAsync();
 
+    // read-only lookup (AsNoTracking): ClaimService only reads it to check ownership + status, then links the
+    // new claim by EnrollmentId, never by the navigation, so EF never mistakes it for a new enrollment
+    public Task<Enrollment?> GetByIdAsync(int id) => db.Enrollments
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == id);
+
     // AnyAsync = SELECT CASE WHEN EXISTS(...), stops at the first match. used to block duplicate enrollments
     public Task<bool> HasActiveEnrollmentAsync(int userId, int planId) => db.Enrollments
             .AnyAsync(e => e.UserId == userId && e.PlanId == planId && e.Status == EnrollmentStatus.Active);

@@ -10,7 +10,6 @@
 using Microsoft.AspNetCore.Mvc;
 using OneCover.Api.Dtos;
 using OneCover.Api.Services;
-using Microsoft.AspNetCore.Authorization;
 
 namespace OneCover.Api.Controllers;
 
@@ -33,16 +32,6 @@ public class AuthController(IAuthService auth) : ControllerBase
             Ok(await auth.LoginAsync(request)); // Ok: 200 OK, with the AuthResponse serialized to JSON as the body
     
     [HttpPost("register")]
-    public async Task<ActionResult<AuthResponse>> Register(RegistrationRequest request) => 
+    public async Task<ActionResult<AuthResponse>> Register(RegistrationRequest request) =>
         Ok(await auth.RegisterAsync(request));
-
-    // **TEMPORARY !! ** : proves JWT auth + ICurrentUser work. REMOVE once real protected endpoints exist ! **** 
-    [Authorize]
-    [HttpGet("whoami")]
-    public IActionResult WhoAmI([FromServices] ICurrentUser currentUser) => Ok(new { currentUser.UserId, currentUser.IsAdmin});
-
-    // **TEMPORARY !! ** : proves role-based [Authorize(Roles = "Admin")] works. REMOVE once real protected endpoints exist ! **** 
-    [Authorize(Roles = "Admin")]
-    [HttpGet("admin-check")]
-    public IActionResult AdminCheck() => Ok(new {message = "You're an admin."});
 }

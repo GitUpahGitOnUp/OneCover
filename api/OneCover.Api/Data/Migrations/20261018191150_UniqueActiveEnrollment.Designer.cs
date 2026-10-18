@@ -9,7 +9,7 @@ using OneCover.Api.Data;
 
 #nullable disable
 
-namespace OneCover.Api.Data.Mirgrations
+namespace OneCover.Api.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     [Migration("20261018191150_UniqueActiveEnrollment")]
