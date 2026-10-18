@@ -7,7 +7,8 @@
 //           service lifetimes: Singleton (one for the app), Scoped (one per request), builder pattern,
 //           layered configuration (appsettings -> appsettings.Development -> user-secrets -> env vars), fail fast
 // Related:  every AddScoped line points to an interface + class pair (ICurrentUser/CurrentUser,
-//           IUserRepository/UserRepository, IAuthService/AuthService), AppDbContext, GlobalExceptionHandler, DbSeeder
+//           IUserRepository/UserRepository, IPlanRepository/PlanRepository, IAuthService/AuthService),
+//           AppDbContext, GlobalExceptionHandler, DbSeeder
 // ─────────────────────────────────────────────────────────────────────────────────────────
 using Microsoft.EntityFrameworkCore;
 using OneCover.Api.Data;
@@ -37,7 +38,6 @@ builder.Services.AddDbContext<AppDbContext>(o =>
 builder.Services.AddSingleton(TimeProvider.System);
 
 // one place that turns exceptions into consistent ProblemDetails error responses
-
 builder.Services.AddProblemDetails(); // AddProb... registers IProblemDetailsService, what the handler receives in its constructor and uses to write JSON
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>(); // AddExce.... tells ASP.NET Core to call this class when an exception escapes
@@ -53,7 +53,13 @@ builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 // which is one per request, and a service can't safely outlive what it depends on
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
+// same idea for plans: IPlanRepository -> PlanRepository, scoped for the same reason (it uses AppDbContext)
+builder.Services.AddScoped<IPlanRepository, PlanRepository>();
+
+// services (business logic): scoped b/c they depend on scoped repositories
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services.AddScoped<IPlanService, PlanService>();
 
 // fail fast: if the key were ever missing the ?? throw fails at startup w/ a message stating the exact fix needed
 var jwtKey = builder.Configuration["Jwt:Key"] 

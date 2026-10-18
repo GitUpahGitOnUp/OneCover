@@ -30,8 +30,9 @@ public record RegistrationRequest
     [Required]
     public DateOnly? HireDate {get; init; } 
 
-    [Required, Range(0, 10_000_000)]
-    public decimal? AnnualSalary { get; init;} 
+    // decimal-aware Range (the int version would round -0.4 up to 0 and let a negative salary through)
+    [Required, Range(typeof(decimal), "0", "10000000")]
+    public decimal? AnnualSalary { get; init;}
 
     [Required, Range(0, 8760)] // 8760 = hours in a year
     public int? HoursWorkedLast12Months { get; init; } 
