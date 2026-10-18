@@ -62,6 +62,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             user.Property(u => u.LastName).HasMaxLength(100);
         });
 
+        // FILTERED UNIQUE INDEX: only ONE *Active* enrollment per member per plan. the service checks this first
+        // for a friendly message, but two requests at the same moment (a double-click) could both pass that check.
+        // the database guarantees it no matter what. HasFilter = the rule only applies to Active rows, so a member
+        // could cancel and re-enroll later. this is "defense in depth", same idea as the unique Email index
+        b.Entity<Enrollment>()
+            .HasIndex(e => new { e.UserId, e.PlanId })
+            .IsUnique()
+            .HasFilter("[Status] = 'Active'");
+
         // nothing in OneCover is hard-deleted. Plans are retired and claims, history, and payments
         // are immutable records to keep. So refuse deletes instead of cascading. This avoids
         // SQL Server's multiple cascade paths error. 

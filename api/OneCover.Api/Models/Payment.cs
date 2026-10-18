@@ -43,4 +43,19 @@ public class Payment
 
     // rule to protect: Paid always comes w/ a PaidDate, and a Paid payment never goes back to Pending
     public PaymentStatus Status { get; private set; } = PaymentStatus.Pending;
+
+    //private: outside code can't write "new Payment()". payments are created *ONLY* through factory methods
+    // like PendingPremium, so every payment starts valid. (EF Core can still use this when loading from the DB)
+    private Payment() { }
+
+    /// <summary>Creates the Pending premium payment for a new enrollment.</summary>
+    public static Payment PendingPremium(Enrollment enrollment, decimal amount, DateOnly dueDate) => new()
+    {
+        UserId = enrollment.UserId,
+        Enrollment = enrollment, // link via the navigation, not EnrollmentId as the enrollment is brand new and no Id # has been saved yet
+        Type = PaymentType.Premium,
+        Amount = amount,
+        DueDate = dueDate
+        // Status is already Pending by default, and PaidDate stays null  
+    };
 }

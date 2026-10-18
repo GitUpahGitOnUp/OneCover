@@ -9,6 +9,7 @@
 //           ClaimWorkflow + MoveTo (Day 5), BenefitClaim.Submit factory (Day 4), BenefitCalculator (Day 5)
 // ─────────────────────────────────────────────────────────────────────────────────────────
 using OneCover.Api.Models.Enums;
+using OneCover.Api.Errors;
 
 namespace OneCover.Api.Models;
 
@@ -47,5 +48,48 @@ public class BenefitClaim
 
     // collection navigation exposed as read-only: IReadOnlyCollection has no Add method
     public IReadOnlyCollection<ClaimStatusHistory> History => _history;
+
+    // private: no "new BenefitClaim()" from outside. Submit is the only way to create a claim
+    private BenefitClaim() { }
+
+    /// <summary>
+    /// Creates a new claim in Submitted status, with its first history row.
+    /// Throws BusinessRuleException if the end date is before the start date.
+    /// </summary>
+    public static BenefitClaim Submit(
+        Enrollment enrollment, string reason, DateOnly startDate, DateOnly endDate, 
+        decimal weeklyBenefit, decimal totalBenefit, DateTime submittedAt)
+    {
+        // the claim protects its own rule, not matter who calls Submit
+        if (endDate < startDate)
+        {
+            throw new BusinessRuleException("End date can't be before the start date.");
+        }
+
+        var claim = new BenefitClaim
+        {
+            UserId = enrollment.UserId,
+            EnrollmentId = enrollment.Id,     // the enrollment already exists, so its real id is known
+            Reason = reason.Trim(),
+            StartDate = startDate,
+            EndDate = endDate,
+            WeeklyBenefit = weeklyBenefit,    // private set: allowed here because we're INSIDE the class
+            TotalBenefit = totalBenefit,
+            SubmittedAt = submittedAt
+            // Status already defaults to Submitted
+        };
+
+        // first audit row: no "from" status (the claim didn't exist before), submitted by the member
+        claim._history.Add(new ClaimStatusHistory
+        {
+            FromStatus = null,
+            ToStatus = ClaimStatus.Submitted,
+            ChangedByUserId = enrollment.UserId,
+            ChangedAt = submittedAt
+        });
+
+        return claim;
+
+    }
 
 }
