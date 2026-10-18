@@ -4,9 +4,11 @@
 // Layer:    Models (domain)
 // Concepts: ENCAPSULATION. this is the one entity w/ workflow rules, so it protects its own data:
 //           private set on Status + the calculated amounts, a private history list exposed read-only.
-//           "rich domain model": the class enforces its own rules (MoveTo on Day 5) vs. any code setting anything
-// Related:  ClaimStatus enum, ClaimStatusHistory (its audit trail), Enrollment, User,
-//           ClaimWorkflow + MoveTo (Day 5), BenefitClaim.Submit factory (Day 4), BenefitCalculator (Day 5)
+//           "rich domain model": the class enforces its own rules (MoveTo on Day 5) vs. any code setting anything.
+//           FACTORY METHOD + PRIVATE CONSTRUCTOR: Submit() is the ONLY way to create a claim, so every claim starts
+//           valid (dates checked, status Submitted, first history row written)
+// Related:  ClaimStatus enum, ClaimStatusHistory (its audit trail), Enrollment, User, BusinessRuleException,
+//           ClaimService (calls Submit), ClaimWorkflow + MoveTo (Day 5), BenefitCalculator (Day 5, supplies the amounts)
 // ─────────────────────────────────────────────────────────────────────────────────────────
 using OneCover.Api.Models.Enums;
 using OneCover.Api.Errors;
@@ -49,18 +51,21 @@ public class BenefitClaim
     // collection navigation exposed as read-only: IReadOnlyCollection has no Add method
     public IReadOnlyCollection<ClaimStatusHistory> History => _history;
 
-    // private: no "new BenefitClaim()" from outside. Submit is the only way to create a claim
+    // private: no "new BenefitClaim()" from outside. Submit is the only way to create a claim.
+    // EF Core can still call it when loading claims from the DB
     private BenefitClaim() { }
 
     /// <summary>
     /// Creates a new claim in Submitted status, with its first history row.
     /// Throws BusinessRuleException if the end date is before the start date.
     /// </summary>
+    // static = called on the class, not an object: BenefitClaim.Submit(...). returns the new claim.
+    // the amounts are passed in (0 for now). on Day 5 the BenefitCalculator supplies real ones, Submit doesn't change
     public static BenefitClaim Submit(
-        Enrollment enrollment, string reason, DateOnly startDate, DateOnly endDate, 
+        Enrollment enrollment, string reason, DateOnly startDate, DateOnly endDate,
         decimal weeklyBenefit, decimal totalBenefit, DateTime submittedAt)
     {
-        // the claim protects its own rule, not matter who calls Submit
+        // the claim protects its own rule, no matter who calls Submit (Angular checks it too, this is the last line of defense)
         if (endDate < startDate)
         {
             throw new BusinessRuleException("End date can't be before the start date.");
@@ -79,7 +84,9 @@ public class BenefitClaim
             // Status already defaults to Submitted
         };
 
-        // first audit row: no "from" status (the claim didn't exist before), submitted by the member
+        // first audit row: no "from" status (the claim didn't exist before), submitted by the member.
+        // only code inside BenefitClaim can reach the private _history list. on save, EF inserts the claim
+        // first, then this row, filling in its ClaimId automatically
         claim._history.Add(new ClaimStatusHistory
         {
             FromStatus = null,

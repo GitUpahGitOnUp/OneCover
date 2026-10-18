@@ -57,12 +57,14 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPlanRepository, PlanRepository>();
 builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<IClaimRepository, ClaimRepository>();
 
 // services (business logic): scoped b/c they depend on scoped repositories
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddScoped<IPlanService, PlanService>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
+builder.Services.AddScoped<IClaimService, ClaimService>();
 
 // fail fast: if the key were ever missing the ?? throw fails at startup w/ a message stating the exact fix needed
 var jwtKey = builder.Configuration["Jwt:Key"] 
