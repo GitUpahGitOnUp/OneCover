@@ -34,7 +34,4 @@ public class AuthController(IAuthService auth) : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult<AuthResponse>> Register(RegistrationRequest request) =>
         Ok(await auth.RegisterAsync(request));
-
-    // (the TEMPORARY whoami / admin-check test endpoints were removed: real protected endpoints like
-    //  /api/claims and /api/enrollments now prove [Authorize] and roles work)
 }

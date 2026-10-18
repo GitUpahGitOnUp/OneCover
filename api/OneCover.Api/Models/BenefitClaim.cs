@@ -57,7 +57,7 @@ public class BenefitClaim
 
     /// <summary>
     /// Creates a new claim in Submitted status, with its first history row.
-    /// Throws BusinessRuleException if the end date is before the start date.
+    /// Throws BusinessRuleException if the end date is before the start date, or the claim starts before coverage began.
     /// </summary>
     // static = called on the class, not an object: BenefitClaim.Submit(...). returns the new claim.
     // the amounts are passed in (0 for now). on Day 5 the BenefitCalculator supplies real ones, Submit doesn't change
@@ -69,6 +69,12 @@ public class BenefitClaim
         if (endDate < startDate)
         {
             throw new BusinessRuleException("End date can't be before the start date.");
+        }
+
+        // a claim can only cover time the member was actually covered. also blocks nonsense dates like 0001-01-01
+        if (startDate < enrollment.EnrolledOn)
+        {
+            throw new BusinessRuleException("A claim can't start before the coverage began.");
         }
 
         var claim = new BenefitClaim

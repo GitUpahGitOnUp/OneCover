@@ -25,7 +25,8 @@ public static class ClaimMappings
         TotalBenefit: claim.TotalBenefit,
         SubmittedAt: claim.SubmittedAt,
         History: claim.History
-            .OrderBy(h => h.ChangedAt)                  // timeline order: oldest first
+            .OrderBy(h => h.ChangedAt)                  // timeline order: oldest first...
+            .ThenBy(h => h.Id)                          // ...and ids break ties (same timestamp = creation order)
             .Select(h => h.ToDto())
             .ToList());
 

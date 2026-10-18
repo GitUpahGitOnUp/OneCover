@@ -4,7 +4,7 @@
 // Concepts: ABSTRACTION (depend on the "what", not the "how"), DEPENDENCY INJECTION (injected wherever needed),
 //           security rule: the user id ALWAYS comes from the JWT, never the URL or request body
 // Related:  CurrentUser (the implementation), Program.cs (AddScoped<ICurrentUser, CurrentUser>),
-//           AuthController.WhoAmI (step 10), every member-facing service on Day 4
+//           ClaimService + EnrollmentService (use UserId for ownership, IsAdmin for who can see any claim)
 // ─────────────────────────────────────────────────────────────────────────────────────────
 namespace OneCover.Api.Services;
 
