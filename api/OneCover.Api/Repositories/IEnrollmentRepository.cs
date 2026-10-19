@@ -15,7 +15,7 @@ public interface IEnrollmentRepository
     /// <summary>A member's enrollments with their Plan loaded, newest first.</summary>
     Task<IReadOnlyList<Enrollment>> GetByUserAsync(int userId);
 
-    /// <summary>One enrollment, or null. Used by ClaimService to check the member owns it before filing a claim.</summary>
+    /// <summary>One enrollment with its Plan loaded (read-only), or null. Used by ClaimService to check ownership and do the benefit math.</summary>
     Task<Enrollment?> GetByIdAsync(int id);
 
     /// <summary>True if the member already has an ACTIVE enrollment in this plan.</summary>

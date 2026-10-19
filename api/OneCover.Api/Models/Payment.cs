@@ -3,12 +3,14 @@
 // Layer:    Models (domain)
 // Concepts: all 3 kinds of setter in one class:
 //             init        = facts fixed at creation (who, how much, when due), money records are never edited
-//             private set = changes, but only through this class's own methods (MarkPaid/MarkFailed, Day 5)
+//             private set = changes, but only through this class's own methods (MarkPaid/MarkFailed)
+//           FACTORY METHODS + PRIVATE CONSTRUCTOR: PendingPremium / PendingBenefit are the only ways to create one
 //             set         = Id + navigations, EF Core fills those in
 //           optional relationships: int? FK + nullable navigation (no = null!). each payment uses exactly one
 // Related:  PaymentType, PaymentStatus, Enrollment (premiums), BenefitClaim (benefits), User,
 //           EnrollmentService (creates premium payments, Day 4), claim approval (creates benefit payments, Day 5)
 // ─────────────────────────────────────────────────────────────────────────────────────────
+using OneCover.Api.Errors;
 using OneCover.Api.Models.Enums;
 
 namespace OneCover.Api.Models;
@@ -56,6 +58,42 @@ public class Payment
         Type = PaymentType.Premium,
         Amount = amount,
         DueDate = dueDate
-        // Status is already Pending by default, and PaidDate stays null  
+        // Status is already Pending by default, and PaidDate stays null
     };
+
+    /// <summary>Creates the Pending benefit payment for an approved claim, for the claim's total benefit.</summary>
+    // ClaimId (not the navigation) b/c the claim already exists, so its real id is known (same reasoning as BenefitClaim.Submit)
+    public static Payment PendingBenefit(BenefitClaim claim, DateOnly dueDate) => new()
+    {
+        UserId = claim.UserId,
+        ClaimId = claim.Id,
+        Type = PaymentType.Benefit,
+        Amount = claim.TotalBenefit,
+        DueDate = dueDate
+    };
+
+    /// <summary>Marks a Pending payment as paid on the given date. Throws BusinessRuleException if it isn't Pending.</summary>
+    // the rule this class protects: Status and PaidDate change TOGETHER, and only from Pending.
+    // Status/PaidDate have private setters, so these methods are the only way in (encapsulation)
+    public void MarkPaid(DateOnly paidOn)
+    {
+        if (Status != PaymentStatus.Pending)
+        {
+            throw new BusinessRuleException($"Only pending payments can be marked paid. This one is {Status}.");
+        }
+
+        Status = PaymentStatus.Paid;
+        PaidDate = paidOn;
+    }
+
+    /// <summary>Marks a Pending payment as failed. Throws BusinessRuleException if it isn't Pending.</summary>
+    public void MarkFailed()
+    {
+        if (Status != PaymentStatus.Pending)
+        {
+            throw new BusinessRuleException($"Only pending payments can be marked failed. This one is {Status}.");
+        }
+
+        Status = PaymentStatus.Failed;   // PaidDate stays null: it never went through
+    }
 }

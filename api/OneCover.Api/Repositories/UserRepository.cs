@@ -25,6 +25,9 @@ public class UserRepository(AppDbContext db) : IUserRepository
     // AnyAsync = "is there at least one row?" stops at the first match, so it's fast
     public Task<bool> EmailExistsAsync(string email) => db.Users.AnyAsync(u => u.Email == email);
 
+    // read-only (AsNoTracking): used for the profile (/api/me) and to read a member's salary for the benefit math
+    public Task<User?> GetByIdAsync(int id) => db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
+
     // just tells EF's change tracker "insert this on the next save", nothing goes to SQL Server yet
     public void Add(User user) => db.Users.Add(user);
 

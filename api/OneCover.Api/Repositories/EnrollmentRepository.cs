@@ -27,9 +27,11 @@ public class EnrollmentRepository(AppDbContext db) : IEnrollmentRepository
             .ToListAsync();
 
     // read-only lookup (AsNoTracking): ClaimService only reads it to check ownership + status, then links the
-    // new claim by EnrollmentId, never by the navigation, so EF never mistakes it for a new enrollment
+    // new claim by EnrollmentId, never by the navigation, so EF never mistakes it for a new enrollment.
+    // Include(Plan): the benefit math needs the plan's percent, weekly max and elimination days
     public Task<Enrollment?> GetByIdAsync(int id) => db.Enrollments
             .AsNoTracking()
+            .Include(e => e.Plan)
             .FirstOrDefaultAsync(e => e.Id == id);
 
     // AnyAsync = SELECT CASE WHEN EXISTS(...), stops at the first match. used to block duplicate enrollments

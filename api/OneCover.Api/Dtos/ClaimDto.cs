@@ -14,6 +14,7 @@ namespace OneCover.Api.Dtos;
 public record ClaimDto(
     int Id,
     int EnrollmentId,
+    string MemberName,      // who filed it. the admin claims queue needs this
     string PlanName,
     PlanType PlanType,
     string Reason,
@@ -23,6 +24,7 @@ public record ClaimDto(
     decimal WeeklyBenefit,
     decimal TotalBenefit,
     DateTime SubmittedAt,
+    IReadOnlyList<ClaimStatus> NextStatuses,   // moves the workflow allows from here: the admin "Move to…" options
     IReadOnlyList<ClaimHistoryDto> History);
 
 /// <summary>One status change in a claim's timeline. FromStatus is null on the first (submission) row.</summary>

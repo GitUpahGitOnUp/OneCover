@@ -65,6 +65,13 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPlanService, PlanService>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
 builder.Services.AddScoped<IClaimService, ClaimService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
+
+// pure business rules w/ no per-request state -> SINGLETON (one shared instance for the whole app).
+// safe b/c they only depend on other singletons (TimeProvider) and hold no data between calls
+builder.Services.AddSingleton<IBenefitCalculator, BenefitCalculator>();
+builder.Services.AddSingleton<IEligibilityService, EligibilityService>();
 
 // fail fast: if the key were ever missing the ?? throw fails at startup w/ a message stating the exact fix needed
 var jwtKey = builder.Configuration["Jwt:Key"] 
