@@ -108,7 +108,12 @@ namespace OneCover.Api.Data.Migrations
 
                     b.HasIndex("ClaimId");
 
-                    b.ToTable("ClaimStatusHistories");
+                    b.ToTable("ClaimStatusHistories", t =>
+                        {
+                            t.HasTrigger("TR_ClaimStatusHistories_AppendOnly");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("OneCover.Api.Models.Enrollment", b =>
@@ -189,7 +194,10 @@ namespace OneCover.Api.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Payments");
+                    b.ToTable("Payments", t =>
+                        {
+                            t.HasCheckConstraint("CK_Payments_ExactlyOneLink", "([EnrollmentId] IS NOT NULL AND [ClaimId] IS NULL) OR ([EnrollmentId] IS NULL AND [ClaimId] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("OneCover.Api.Models.Plan", b =>

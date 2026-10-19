@@ -28,6 +28,9 @@ public interface IUserRepository
     /// <summary>True if an account already uses this email.</summary>
     Task<bool> EmailExistsAsync(string email);
 
+    /// <summary>Finds a user by id (read-only). Returns null if no user has that id.</summary>
+    Task<User?> GetByIdAsync(int id);
+
     // not a Task b/c it doesn't hit the DB, it just marks the user to be inserted on the next save
     void Add(User user);
 

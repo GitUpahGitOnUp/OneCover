@@ -105,4 +105,30 @@ public class BenefitClaim
 
     }
 
+    /// <summary>
+    /// Moves the claim to a new status if the workflow allows it, and records the change in History.
+    /// Throws BusinessRuleException for a move the workflow doesn't allow (e.g. Closed → Approved).
+    /// </summary>
+    public void MoveTo(ClaimStatus newStatus, int changedByUserId, string? note, DateTime changedAt)
+    {
+        // 1. ask the rule book. An invalid move never changes anything
+        if (!ClaimWorkflow.CanMove(Status, newStatus))
+        {
+            throw new BusinessRuleException($"Can't move a claim from {Status} to {newStatus}");
+        }
+
+        // 2. record the change *BEFORE* updating Status, so FromStatus still holds the old value
+        _history.Add(new ClaimStatusHistory
+        {
+           FromStatus = Status,
+           ToStatus = newStatus,
+           ChangedByUserId = changedByUserId,
+           ChangedAt = changedAt,
+           Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim() 
+        }); 
+
+        // 3. only now change the status. The private setter means this class is the *ONLY* place that can
+        Status = newStatus;
+    }
+
 }

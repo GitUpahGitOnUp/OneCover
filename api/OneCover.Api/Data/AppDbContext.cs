@@ -71,6 +71,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .IsUnique()
             .HasFilter("[Status] = 'Active'");
 
+        // CHECK CONSTRAINT: every payment links to EXACTLY ONE of an enrollment (premium) or a claim (benefit).
+        // the factories already guarantee it in C#; this makes SQL Server refuse a bad row from anywhere else too.
+        // defined here (not just in a .sql file) so the migration carries it and a rebuilt DB always has it
+        b.Entity<Payment>().ToTable(t => t.HasCheckConstraint(
+            "CK_Payments_ExactlyOneLink",
+            "([EnrollmentId] IS NOT NULL AND [ClaimId] IS NULL) OR ([EnrollmentId] IS NULL AND [ClaimId] IS NOT NULL)"));
+
+        // ClaimStatusHistories has a database TRIGGER that blocks UPDATE/DELETE (see sql/ClaimStatusHistory_AppendOnly.sql).
+        // telling EF about it makes EF save rows to that table in a trigger-safe way (SQL Server rejects the
+        // faster "OUTPUT" style EF normally uses when a table has triggers)
+        b.Entity<ClaimStatusHistory>().ToTable(t => t.HasTrigger("TR_ClaimStatusHistories_AppendOnly"));
+
         // nothing in OneCover is hard-deleted. Plans are retired and claims, history, and payments
         // are immutable records to keep. So refuse deletes instead of cascading. This avoids
         // SQL Server's multiple cascade paths error. 

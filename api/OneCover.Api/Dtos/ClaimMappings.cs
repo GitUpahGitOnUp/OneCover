@@ -1,8 +1,9 @@
 // ── ANATOMY ──────────────────────────────────────────────────────────────────────────────
 // What:     BenefitClaim entity -> ClaimDto (and each history row -> ClaimHistoryDto)
 // Layer:    Dtos (mapping)
-// Concepts: EXTENSION METHODS, named arguments, navigation properties (claim.Enrollment.Plan,
-//           history.ChangedByUser), so the repository must Include them or they'd be null
+// Concepts: EXTENSION METHODS, named arguments, navigation properties (claim.User, claim.Enrollment.Plan,
+//           history.ChangedByUser), so the repository must Include them or they'd be null.
+//           NextStatuses comes from ClaimWorkflow, so the UI can only offer moves the server would accept
 // Related:  BenefitClaim, ClaimStatusHistory, ClaimDto, ClaimRepository (the Includes), ClaimService
 // ─────────────────────────────────────────────────────────────────────────────────────────
 using OneCover.Api.Models;
@@ -15,6 +16,7 @@ public static class ClaimMappings
     public static ClaimDto ToDto(this BenefitClaim claim) => new(
         Id: claim.Id,
         EnrollmentId: claim.EnrollmentId,
+        MemberName: $"{claim.User.FirstName} {claim.User.LastName}",
         PlanName: claim.Enrollment.Plan.Name,          // two navigations deep: claim -> enrollment -> plan
         PlanType: claim.Enrollment.Plan.Type,
         Reason: claim.Reason,
@@ -24,6 +26,7 @@ public static class ClaimMappings
         WeeklyBenefit: claim.WeeklyBenefit,
         TotalBenefit: claim.TotalBenefit,
         SubmittedAt: claim.SubmittedAt,
+        NextStatuses: ClaimWorkflow.NextStatuses(claim.Status),   // the rulebook decides, not the front end
         History: claim.History
             .OrderBy(h => h.ChangedAt)                  // timeline order: oldest first...
             .ThenBy(h => h.Id)                          // ...and ids break ties (same timestamp = creation order)
