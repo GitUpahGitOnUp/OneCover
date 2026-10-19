@@ -35,11 +35,21 @@ public class PaymentService(
         var payment = await payments.GetByIdAsync(id)
             ?? throw new NotFoundException($"Payment {id} not found.");
 
+        var today = DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime);
+
         // the entity's methods do the real work + enforce the rules (throw if it isn't Pending)
         switch (request.Status)
         {
             case PaymentStatus.Paid:
-                payment.MarkPaid(request.PaidOn ?? DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime));
+                var paidOn = request.PaidOn ?? today;
+
+                // a payment can't be recorded as paid in the future (e.g. "2099-01-01" from a typo)
+                if (paidOn > today)
+                {
+                    throw new BusinessRuleException("A payment can't be marked paid on a future date.");
+                }
+
+                payment.MarkPaid(paidOn);
                 break;
             case PaymentStatus.Failed:
                 payment.MarkFailed();

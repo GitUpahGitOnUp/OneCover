@@ -50,6 +50,14 @@ public class BenefitClaimTests
     }
 
     [Fact]
+    public void Submit_Throws_WhenClaimCoversMoreThanOneYear()
+    {
+        // an end date like 9999-12-31 would otherwise calculate a huge benefit
+        Assert.Throws<BusinessRuleException>(() => BenefitClaim.Submit(
+            ActiveEnrollment(), "Long leave", new DateOnly(2026, 2, 1), new DateOnly(9999, 12, 31), 0m, 0m, Now));
+    }
+
+    [Fact]
     public void Submit_Throws_WhenClaimStartsBeforeCoverage()
     {
         // coverage began Jan 1, 2026, so a leave starting in 2025 isn't covered

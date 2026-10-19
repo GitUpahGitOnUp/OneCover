@@ -57,7 +57,8 @@ public class BenefitClaim
 
     /// <summary>
     /// Creates a new claim in Submitted status, with its first history row.
-    /// Throws BusinessRuleException if the end date is before the start date, or the claim starts before coverage began.
+    /// Throws BusinessRuleException if the end date is before the start date, the claim starts before coverage began,
+    /// or the claim covers more than one year.
     /// </summary>
     // static = called on the class, not an object: BenefitClaim.Submit(...). returns the new claim.
     // the amounts are passed in (0 for now). on Day 5 the BenefitCalculator supplies real ones, Submit doesn't change
@@ -75,6 +76,14 @@ public class BenefitClaim
         if (startDate < enrollment.EnrolledOn)
         {
             throw new BusinessRuleException("A claim can't start before the coverage began.");
+        }
+
+        // upper bound on the claim period: without one, an end date like 9999-12-31 would calculate a
+        // multi-million-dollar benefit. one year is a simple, generous cap for this project
+        // (real STD plans usually cap at 13-26 weeks, LTD runs longer through a separate process)
+        if (endDate > startDate.AddYears(1))
+        {
+            throw new BusinessRuleException("A single claim can't cover more than one year.");
         }
 
         var claim = new BenefitClaim
