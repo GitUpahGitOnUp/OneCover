@@ -5,12 +5,12 @@
 //           from the token the interceptor attaches (members only see their own data)
 // Related:  shared/models.ts (Enrollment), features/member/plans.ts, the API's EnrollmentsController
 // ─────────────────────────────────────────────────────────────────────────────────────────
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { API_URL } from './api';
 import { Enrollment } from '../shared/models';
 
-@Injectable({ providedIn: 'root' })
+@Service()   // Angular v22 singleton service (one shared instance, app-wide)
 export class EnrollmentService {
   private http = inject(HttpClient);
 

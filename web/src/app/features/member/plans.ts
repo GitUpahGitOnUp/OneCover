@@ -9,7 +9,7 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────
 import { Component, inject, signal } from '@angular/core';
 import { CurrencyPipe, PercentPipe } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
+import { errorMessage } from '../../shared/problem-details';
 import { forkJoin } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -96,8 +96,8 @@ export class PlansPage {
         );
         this.loading.set(false);
       },
-      error: () => {
-        this.error.set('Could not load plans. Is the API running?');
+      error: (err: unknown) => {
+        this.error.set(errorMessage(err, 'Could not load plans.'));   // "Can't reach the server" only when it truly can't
         this.loading.set(false);
       },
     });
@@ -115,10 +115,10 @@ export class PlansPage {
           duration: 5000,
         });
       },
-      error: (err: HttpErrorResponse) => {
+      error: (err: unknown) => {
         this.enrollingId.set(null);
         // e.g. "You're already enrolled in this plan." straight from the API
-        this.snackBar.open(err.error?.detail ?? 'Enrollment failed. Please try again.', 'OK', { duration: 5000 });
+        this.snackBar.open(errorMessage(err, 'Enrollment failed. Please try again.'), 'OK', { duration: 5000 });
       },
     });
   }

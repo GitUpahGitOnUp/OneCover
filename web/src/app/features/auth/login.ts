@@ -7,7 +7,7 @@
 // Related:  core/auth.service.ts, app.routes.ts (/login), the API's POST /api/auth/login
 // ─────────────────────────────────────────────────────────────────────────────────────────
 import { Component, inject, signal } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
+import { errorMessage } from '../../shared/problem-details';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -75,9 +75,9 @@ export class LoginPage {
     // subscribe() is what actually sends the request (Observables are lazy)
     this.auth.login(this.form.getRawValue()).subscribe({
       next: () => this.router.navigateByUrl(this.auth.homeRoute()),
-      error: (err: HttpErrorResponse) => {
+      error: (err: unknown) => {
         // the API's ProblemDetails "detail", e.g. "Invalid email or password."
-        this.error.set(err.error?.detail ?? 'Login failed. Please try again.');
+        this.error.set(errorMessage(err, 'Login failed. Please try again.'));   // the API's message, e.g. "Invalid email or password."
         this.loading.set(false);
       },
     });

@@ -7,7 +7,7 @@
 // Related:  core/auth.service.ts, shared/models.ts (RegistrationRequest), the API's POST /api/auth/register
 // ─────────────────────────────────────────────────────────────────────────────────────────
 import { Component, inject, signal } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
+import { errorMessage } from '../../shared/problem-details';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -103,7 +103,7 @@ export class RegisterPage {
     email: ['', [Validators.required, Validators.email, Validators.maxLength(256)]],
     password: ['', [Validators.required, Validators.minLength(8)]],
     hireDate: ['', Validators.required],
-    annualSalary: [null as number | null, [Validators.required, Validators.min(0)]],
+    annualSalary: [null as number | null, [Validators.required, Validators.min(0), Validators.max(10_000_000)]],
     hoursWorkedLast12Months: [null as number | null, [Validators.required, Validators.min(0), Validators.max(8760)]],
     ssnLast4: ['', [Validators.required, Validators.pattern(/^\d{4}$/)]],
   });
@@ -125,8 +125,8 @@ export class RegisterPage {
       })
       .subscribe({
         next: () => this.router.navigateByUrl(this.auth.homeRoute()),
-        error: (err: HttpErrorResponse) => {
-          this.error.set(err.error?.detail ?? err.error?.title ?? 'Registration failed. Please try again.');
+        error: (err: unknown) => {
+          this.error.set(errorMessage(err, 'Registration failed. Please try again.'));   // also shows the first field error from a 400
           this.loading.set(false);
         },
       });

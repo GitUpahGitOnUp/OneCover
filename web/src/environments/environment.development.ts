@@ -6,6 +6,8 @@
 // Related:  environment.ts (production values), core/api.ts (reads apiUrl), the API's launchSettings.json
 // ─────────────────────────────────────────────────────────────────────────────────────────
 export const environment = {
-  apiUrl: 'http://localhost:5173/api',   // the API's "http" launch profile
+  // the API's "http" launch profile. start the API w/ plain `dotnet run` (http), not the https profile:
+  // the API redirects http -> https, and browsers block redirected CORS preflight requests
+  apiUrl: 'http://localhost:5173/api',
 };
 
