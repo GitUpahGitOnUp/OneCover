@@ -56,3 +56,69 @@ export interface Enrollment {
   enrolledOn: string;          // "yyyy-MM-dd"
   status: EnrollmentStatus;
 }
+
+// mirrors the API's ProfileDto (GET /api/me). never includes the password hash
+export interface Profile {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: Role;
+  hireDate: string;                // "yyyy-MM-dd"
+  annualSalary: number;
+  hoursWorkedLast12Months: number;
+  ssnLast4: string;                // only the last 4 exist anywhere; maskSsn displays them as ***-**-1234
+  isFmlaEligible: boolean;
+}
+
+export type ClaimStatus = 'Submitted' | 'InReview' | 'InfoRequested' | 'Approved' | 'Denied' | 'Closed';
+
+// one row of a claim's history timeline (mirrors the API's ClaimHistoryDto)
+export interface ClaimHistory {
+  fromStatus: ClaimStatus | null;   // null on the first row (the submission)
+  toStatus: ClaimStatus;
+  changedBy: string;                // a display name, e.g. "Barbara Barbarosa"
+  changedAt: string;                // ISO date-time (UTC)
+  note: string | null;
+}
+
+// mirrors the API's ClaimDto
+export interface Claim {
+  id: number;
+  enrollmentId: number;
+  memberName: string;
+  planName: string;
+  planType: PlanType;
+  reason: string;
+  startDate: string;                // "yyyy-MM-dd"
+  endDate: string;
+  status: ClaimStatus;
+  weeklyBenefit: number;            // calculated by the API, never sent by the client
+  totalBenefit: number;
+  submittedAt: string;
+  nextStatuses: ClaimStatus[];      // moves the workflow allows from here (used by the admin page)
+  history: ClaimHistory[];
+}
+
+// what the stepper sends: no amounts, no user id (the API works those out)
+export interface SubmitClaimRequest {
+  enrollmentId: number;
+  reason: string;
+  startDate: string;
+  endDate: string;
+}
+
+export type PaymentType = 'Premium' | 'Benefit';
+export type PaymentStatus = 'Pending' | 'Paid' | 'Failed';
+
+// mirrors the API's PaymentDto: one line on a statement
+export interface Payment {
+  id: number;
+  memberName: string;
+  type: PaymentType;
+  description: string;          // ready to show, e.g. "Short-Term Disability premium"
+  amount: number;
+  dueDate: string;              // "yyyy-MM-dd"
+  paidDate: string | null;      // only set once it's Paid
+  status: PaymentStatus;
+}
