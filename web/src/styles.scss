@@ -45,3 +45,8 @@ body {
 .full-width { width: 100%; }
 .error { color: var(--mat-sys-error); }
 
+// .details = a label/value list (<dl>): labels in a snug left column, values beside them.
+// used on profile, claim detail and the file-claim review step, so it lives here once instead of 3 copies
+.details { display: grid; grid-template-columns: max-content 1fr; gap: 8px 24px; }
+.details dt { font-weight: 500; }
+.details dd { margin: 0; }

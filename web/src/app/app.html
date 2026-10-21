@@ -7,6 +7,10 @@
     <nav aria-label="Main">
       @if (auth.role() === 'Member') {
         <a mat-button routerLink="/member/plans" routerLinkActive="active">Plans</a>
+        <a mat-button routerLink="/member/coverage" routerLinkActive="active">My Coverage</a>
+        <a mat-button routerLink="/member/claims" routerLinkActive="active">My Claims</a>
+        <a mat-button routerLink="/member/statements" routerLinkActive="active">Statements</a>
+        <a mat-button routerLink="/member/profile" routerLinkActive="active">Profile</a>
       } @else {
         <a mat-button routerLink="/admin" routerLinkActive="active">Dashboard</a>
       }
