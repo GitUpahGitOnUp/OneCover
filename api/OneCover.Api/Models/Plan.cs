@@ -2,7 +2,8 @@
 // What:     entity for a coverage product (one row in Plans)
 // Layer:    Models (domain)
 // Concepts: plain { get; set; } everywhere = no encapsulation needed, admins can edit any field (no rules to protect).
-//           one class for all plan types instead of inheritance (DisabilityPlan : Plan), simpler on purpose
+//           one class for all plan types instead of inheritance (DisabilityPlan : Plan), simpler on purpose.
+//           IsDisability = a computed property (no column) that answers "can claims be filed against this plan?"
 // Related:  PlanType enum, Enrollment (many enrollments -> one plan), AppDbContext.Plans, DbSeeder (5 plans),
 //           IPlanRepository / PlanService (Day 4)
 // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -45,4 +46,12 @@ public class Plan
     ///  but kept in the database.</summary>
     // sensible default: a new plan starts active (a bool would otherwise default to false = born retired)
     public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// True for short- and long-term disability plans. Only these can have claims filed against them,
+    /// because a claim here is a disability leave (leave dates, weekly benefit, waiting period).
+    /// </summary>
+    // a computed, read-only property (=> with no setter): EF doesn't map it to a column, it's derived from Type.
+    // ENCAPSULATION: the plan answers "am I claimable?" itself, so the rule lives in one testable place
+    public bool IsDisability => Type is PlanType.STD or PlanType.LTD;
 }

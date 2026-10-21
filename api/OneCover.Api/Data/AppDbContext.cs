@@ -40,6 +40,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     {
         builder.Properties<decimal>().HavePrecision(18, 2);
         builder.Properties<Enum>().HaveConversion<string>().HaveMaxLength(50);
+        // every DateTime comes back labeled UTC -> JSON gets a "Z" -> browsers convert to local time correctly
+        builder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
     }
 
     // rules for specific properties and relationships that conventions of EF Core can't infer

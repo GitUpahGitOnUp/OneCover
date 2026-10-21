@@ -3,13 +3,17 @@
 //           then a success panel showing the benefit the API calculated
 // Layer:    features/member (a page component)
 // Concepts: Material STEPPER in linear mode ([stepControl]: you can't move on until that step's form is valid),
-//           two REACTIVE FORMS (one per step), a CROSS-FIELD validator on the dates group, SIGNALS for page state,
-//           [min] on the start date so the picker can't go before coverage began (the API enforces it too),
+//           two REACTIVE FORMS (one per step), CROSS-FIELD validators on the dates group, SIGNALS for page state.
+//           toSignal() turns the radio's valueChanges OBSERVABLE into a signal, so selectedEnrollment is a COMPUTED
+//           (cached, recalculated only when the pick changes). the start date must be on/after that coverage's start:
+//           [min] guides the picker, a VALIDATOR actually blocks typed dates (both mirror BenefitClaim.Submit).
+//           an effect() re-checks the start date whenever the picked coverage changes.
 //           Submit disabled while the request is in flight -> no duplicate claims from a double-click
-// Related:  core/claim.service.ts, core/enrollment.service.ts, shared/validators.ts (endAfterStart),
+// Related:  core/claim.service.ts, core/enrollment.service.ts, shared/validators.ts,
 //           the API's POST /api/claims + BenefitClaim.Submit + BenefitCalculator
 // ─────────────────────────────────────────────────────────────────────────────────────────
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -23,7 +27,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ClaimService } from '../../core/claim.service';
 import { EnrollmentService } from '../../core/enrollment.service';
 import { Claim, Enrollment } from '../../shared/models';
-import { endAfterStart } from '../../shared/validators';
+import { endAfterStart, startOnOrAfter, withinOneYear } from '../../shared/validators';
 import { errorMessage } from '../../shared/problem-details';
 
 @Component({
@@ -54,8 +58,11 @@ import { errorMessage } from '../../shared/problem-details';
       </mat-card>
     } @else if (loading()) {
       <p>Loading your coverage…</p>
+    } @else if (loadError()) {
+      <!-- checked BEFORE "no coverage": a failed load must not tell the member they have no coverage -->
+      <p class="error" role="alert">{{ loadError() }}</p>
     } @else if (activeEnrollments().length === 0) {
-        <p>You need active disability coverage (short-term or long-term) before you can file a claim.</p>
+      <p>You need active disability coverage (short-term or long-term) before you can file a claim.</p>
       <a mat-flat-button routerLink="/member/plans">Browse plans</a>
     } @else {
       <!-- linear = each step must be valid before the next one opens -->
@@ -81,7 +88,17 @@ import { errorMessage } from '../../shared/problem-details';
             <mat-form-field class="full-width">
               <mat-label>First day of leave</mat-label>
               <input matInput type="date" formControlName="startDate" [min]="selectedEnrollment()?.enrolledOn ?? ''" />
-              <mat-error>Start date is required (on or after your coverage began).</mat-error>
+              @if (selectedEnrollment(); as e) {
+                <mat-hint>Your coverage began {{ e.enrolledOn | date: 'mediumDate' : 'UTC' }}.</mat-hint>
+              }
+              <!-- one mat-error, message picked by WHICH error the control has -->
+              <mat-error>
+                @if (detailsForm.controls.startDate.hasError('beforeCoverage')) {
+                  The first day can't be before your coverage began.
+                } @else {
+                  Start date is required.
+                }
+              </mat-error>
             </mat-form-field>
 
             <mat-form-field class="full-width">
@@ -93,6 +110,9 @@ import { errorMessage } from '../../shared/problem-details';
             <!-- a GROUP-level error (from endAfterStart) isn't tied to one field, so it's shown here, not in mat-error -->
             @if (detailsForm.hasError('endBeforeStart') && detailsForm.controls.endDate.touched) {
               <p class="error" role="alert">The last day can't be before the first day.</p>
+            }
+            @if (detailsForm.hasError('tooLong') && detailsForm.controls.endDate.touched) {
+              <p class="error" role="alert">A single claim can't cover more than one year.</p>
             }
 
             <mat-form-field class="full-width">
@@ -110,7 +130,7 @@ import { errorMessage } from '../../shared/problem-details';
 
         <!-- STEP 3: review + submit -->
         <mat-step label="Review">
-          <dl class="review">
+          <dl class="details">
             <dt>Coverage</dt><dd>{{ selectedEnrollment()?.planName }}</dd>
             <dt>Dates</dt>
             <dd>
@@ -131,12 +151,10 @@ import { errorMessage } from '../../shared/problem-details';
       </mat-stepper>
     }
   `,
+  // .details (the review step's dl grid) is a global helper in styles.scss
   styles: `
     .choices { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
     .actions { display: flex; gap: 8px; margin-top: 8px; }
-    .review { display: grid; grid-template-columns: max-content 1fr; gap: 8px 24px; }
-    .review dt { font-weight: 500; }
-    .review dd { margin: 0; }
   `,
 })
 export class FileClaimPage {
@@ -147,6 +165,7 @@ export class FileClaimPage {
 
   protected readonly activeEnrollments = signal<Enrollment[]>([]);
   protected readonly loading = signal(true);
+  protected readonly loadError = signal<string | null>(null);   // set if the coverage list fails to load
   protected readonly submitting = signal(false);
   protected readonly submitted = signal<Claim | null>(null);   // set after a successful submit -> success panel
 
@@ -155,35 +174,49 @@ export class FileClaimPage {
     enrollmentId: [null as number | null, Validators.required],
   });
 
-  // step 2's form: dates + reason. endAfterStart is passed as a GROUP validator (it compares two fields)
+  // the radio's value as a SIGNAL. valueChanges is an observable; toSignal subscribes for us (and unsubscribes
+  // when the page is destroyed). initialValue covers the moment before anything is picked
+  private readonly enrollmentId = toSignal(this.coverageForm.controls.enrollmentId.valueChanges, {
+    initialValue: null,
+  });
+
+  // the enrollment picked in step 1 (review step, the start date's hint/minimum, the validator below).
+  // declared BEFORE detailsForm on purpose: the form runs its validators as soon as it's created
+  protected readonly selectedEnrollment = computed(() =>
+    this.activeEnrollments().find(e => e.id === this.enrollmentId()));
+
+  // step 2's form: dates + reason. the date-pair rules are GROUP validators (they compare two fields);
+  // startOnOrAfter is on the one control, and reads the current minimum each time it runs
   protected readonly detailsForm = this.fb.group(
     {
-      startDate: ['', Validators.required],
+      startDate: ['', [Validators.required, startOnOrAfter(() => this.selectedEnrollment()?.enrolledOn)]],
       endDate: ['', Validators.required],
       reason: ['', [Validators.required, Validators.maxLength(1000)]],
     },
-    { validators: endAfterStart },
+    { validators: [endAfterStart, withinOneYear] },
   );
 
   constructor() {
+    // validators only re-run when THEIR control changes. if the member goes back and picks a different
+    // coverage, the start date must be re-checked against the new minimum. effect() re-runs whenever a
+    // signal it reads (selectedEnrollment) changes
+    effect(() => {
+      this.selectedEnrollment();
+      this.detailsForm.controls.startDate.updateValueAndValidity();
+    });
+
     this.enrollmentService.getMine().subscribe({
       next: list => {
-        // only active DISABILITY coverage can be claimed against (same rule as the API's ClaimService)
+        // only active DISABILITY coverage can be claimed against (same rule as the API's Plan.IsDisability)
         this.activeEnrollments.set(
           list.filter(e => e.status === 'Active' && (e.planType === 'STD' || e.planType === 'LTD')));
         this.loading.set(false);
       },
       error: (err: unknown) => {
+        this.loadError.set(errorMessage(err, 'Could not load your coverage.'));
         this.loading.set(false);
-        this.snackBar.open(errorMessage(err, 'Could not load your coverage.'), 'OK', { duration: 5000 });
       },
     });
-  }
-
-  // the enrollment picked in step 1 (used for the review step + the start date's minimum)
-  protected selectedEnrollment(): Enrollment | undefined {
-    const id = this.coverageForm.controls.enrollmentId.value;
-    return this.activeEnrollments().find(e => e.id === id);
   }
 
   protected submit() {

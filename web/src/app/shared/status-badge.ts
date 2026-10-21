@@ -4,9 +4,10 @@
 // Concepts: input.required<string>() = a value the PARENT passes in: <app-status-badge [status]="claim.status" />.
 //           computed() derives the label + CSS class from it. [class] binding picks the color.
 //           dark text on a light background keeps WCAG AA contrast; the text label (not just color) carries the meaning
-// Related:  shared/models.ts (ClaimStatus, PaymentStatus), every page that shows a status
+// Related:  shared/models.ts (ClaimStatus, PaymentStatus), shared/status-label.ts, every page that shows a status
 // ─────────────────────────────────────────────────────────────────────────────────────────
 import { Component, computed, input } from '@angular/core';
+import { statusLabel } from './status-label';
 
 @Component({
   selector: 'app-status-badge',
@@ -42,9 +43,8 @@ export class StatusBadge {
   //
   // label: the human-friendly text shown to the user.
   //   "InReview" -> "In Review", "InfoRequested" -> "Info Requested", "Approved" -> "Approved".
-  //   The regex finds a lowercase letter directly followed by a capital ([a-z])([A-Z]) and rewrites it
-  //   as "$1 $2": first letter, a space, second letter. The g flag makes it apply to every match.
-  protected readonly label = computed(() => this.status().replace(/([a-z])([A-Z])/g, '$1 $2'));
+  //   The formatting lives in shared/status-label.ts so the timeline's "from …" text uses the exact same rule (DRY).
+  protected readonly label = computed(() => statusLabel(this.status()));
 
   // cssClass: the name of the color style to apply. "InReview" -> "inreview", which matches the
   // `.inreview` rule in this component's styles above. The template adds it to the badge via a [class] binding.

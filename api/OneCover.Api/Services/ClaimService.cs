@@ -47,8 +47,9 @@ public class ClaimService(
         }
 
         // rule 3: claims here are disability LEAVE claims (leave dates, weekly benefit, elimination period),
-        // which only make sense for disability plans. a "dental leave claim" would be meaningless
-        if (enrollment.Plan.Type is not (PlanType.STD or PlanType.LTD))
+        // which only make sense for disability plans. a "dental leave claim" would be meaningless.
+        // the plan owns the "which types count" rule (Plan.IsDisability), so it's unit-tested in PlanTests
+        if (!enrollment.Plan.IsDisability)
         {
             throw new BusinessRuleException("Claims can only be filed against disability coverage (STD or LTD).");
         }
@@ -62,7 +63,7 @@ public class ClaimService(
         var endDate = request.EndDate!.Value;
 
         // weekly: salary / 52 x percent, capped. total: daily rate x days after the waiting period.
-        // non-disability plans have percent + max of 0, so they come out to 0
+        // rule 3 above guarantees a disability plan here, so percent + weekly max are real values
         var weekly = calculator.WeeklyBenefit(member.AnnualSalary, plan.BenefitPercent, plan.WeeklyMaximum);
         var total = calculator.TotalBenefit(weekly, startDate, endDate, plan.EliminationDays);
 

@@ -56,10 +56,8 @@ import { errorMessage } from '../../shared/problem-details';
       <p>Loading your profile…</p>
     }
   `,
+  // .details (the dl grid) is a global helper in styles.scss
   styles: `
-    .details { display: grid; grid-template-columns: max-content 1fr; gap: 8px 24px; }
-    .details dt { font-weight: 500; }
-    .details dd { margin: 0; }
     .eligible { color: var(--mat-sys-primary); font-weight: 500; }
   `,
 })
