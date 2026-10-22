@@ -29,7 +29,7 @@ Built as a portfolio project in a .NET full-stack training program.
 | Data | EF Core 10 (code-first migrations), SQL Server |
 | Auth | JWT bearer tokens, role-based authorization (Member / Admin), hashed passwords |
 | Front end | Angular 22 (standalone components, signals), Angular Material, reactive forms |
-| Testing | xUnit (41 tests), Vitest (16 tests), Postman collection |
+| Testing | xUnit (API business rules), Vitest (Angular), Postman collection |
 | Docs | OpenAPI + Swagger UI (development) |
 
 ## Running locally
@@ -118,8 +118,8 @@ SQL Server
 ## Tests
 
 ```
-cd api && dotnet test        # 41 xUnit tests: workflow, entity rules, benefit math, FMLA, payments, plans
-cd web && npx ng test        # 16 Vitest tests: SSN pipe, date validators, AuthService login, app shell
+cd api && dotnet test        # xUnit: claim workflow, entity rules, benefit math, FMLA, payments, plans
+cd web && npx ng test        # Vitest: SSN pipe, date validators, AuthService (login, token restore, expiry), app shell + role nav
 ```
 
 The business rules live in plain classes and entities, so the xUnit tests need no database. A Postman collection covering every endpoint is in `postman/OneCover.postman_collection.json`.

@@ -11,7 +11,8 @@ import { Role } from './models';
 
 // our API writes the role under the long ClaimTypes.Role URI (verified by decoding a real token). some .NET setups
 // shorten it to "role", so both are accepted, in case the API's token settings ever change
-const LONG_ROLE_CLAIM = 'http://schemas.microsoft.com/ws/2008/06/identity/claims/role';
+// exported so tests build tokens w/ the exact claim name the real API uses
+export const LONG_ROLE_CLAIM = 'http://schemas.microsoft.com/ws/2008/06/identity/claims/role';
 
 /** Decodes a JWT's payload (the middle part). Returns null if the token is malformed. */
 export function decodeJwtPayload(token: string): Record<string, unknown> | null {
