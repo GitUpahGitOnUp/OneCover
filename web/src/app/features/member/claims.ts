@@ -61,7 +61,6 @@ import { errorMessage } from '../../shared/problem-details';
       </table>
     }
   `,
-  styles: `.heading { display: flex; align-items: center; justify-content: space-between; }`,
 })
 export class ClaimsPage {
   private claimService = inject(ClaimService);
