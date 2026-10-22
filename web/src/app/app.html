@@ -1,7 +1,10 @@
 <!-- the app shell: a toolbar whose links change by role, then <router-outlet /> where the current page appears.
      @if blocks re-render automatically b/c auth.isLoggedIn() and auth.role() are signals -->
-<mat-toolbar>
-  <a class="brand" [routerLink]="auth.isLoggedIn() ? auth.homeRoute() : '/login'">OneCover</a>
+<mat-toolbar class="app-toolbar">
+  <a class="brand" [routerLink]="auth.isLoggedIn() ? auth.homeRoute() : '/login'">
+    <app-logo />
+    <span class="word">One<strong>Cover</strong></span>
+  </a>
 
   @if (auth.isLoggedIn()) {
     <nav aria-label="Main">
