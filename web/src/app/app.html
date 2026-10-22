@@ -12,7 +12,11 @@
         <a mat-button routerLink="/member/statements" routerLinkActive="active">Statements</a>
         <a mat-button routerLink="/member/profile" routerLinkActive="active">Profile</a>
       } @else {
-        <a mat-button routerLink="/admin" routerLinkActive="active">Dashboard</a>
+        <!-- exact: true, or "Dashboard" (/admin) would ALSO light up on /admin/claims (it's a prefix of it) -->
+        <a mat-button routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
+        <a mat-button routerLink="/admin/claims" routerLinkActive="active">Claims</a>
+        <a mat-button routerLink="/admin/payments" routerLinkActive="active">Payments</a>
+        <a mat-button routerLink="/admin/plans" routerLinkActive="active">Plans</a>
       }
     </nav>
     <span class="spacer"></span>

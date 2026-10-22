@@ -8,4 +8,8 @@ import { Routes } from '@angular/router';
 
 export const ADMIN_ROUTES: Routes = [
   { path: '', loadComponent: () => import('./dashboard').then(m => m.DashboardPage) },
+  { path: 'claims', loadComponent: () => import('./claims-queue').then(m => m.ClaimsQueuePage) },
+  { path: 'claims/:id', loadComponent: () => import('./claim-review').then(m => m.ClaimReviewPage) },
+  { path: 'payments', loadComponent: () => import('./payments').then(m => m.AdminPaymentsPage) },
+  { path: 'plans', loadComponent: () => import('./plans-admin').then(m => m.PlansAdminPage) },
 ];

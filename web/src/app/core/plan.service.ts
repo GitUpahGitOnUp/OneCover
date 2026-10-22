@@ -9,7 +9,7 @@
 import { Service, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { API_URL } from './api';
-import { Plan } from '../shared/models';
+import { Plan, SavePlanRequest } from '../shared/models';
 
 @Service()   // Angular v22 singleton service (one shared instance, app-wide)
 export class PlanService {
@@ -18,5 +18,20 @@ export class PlanService {
   /** Active plans, sorted by name (public: no login needed). */
   getActive() {
     return this.http.get<Plan[]>(`${API_URL}/plans`);
+  }
+
+  /** Admin: create a plan. The API answers 201 Created with the saved plan (new id included). */
+  create(request: SavePlanRequest) {
+    return this.http.post<Plan>(`${API_URL}/plans`, request);
+  }
+
+  /** Admin: replace a plan's details. */
+  update(id: number, request: SavePlanRequest) {
+    return this.http.put<Plan>(`${API_URL}/plans/${id}`, request);
+  }
+
+  /** Admin: retire a plan (a SOFT delete: it stays in the DB, hidden from members). 204 = no body, so void. */
+  retire(id: number) {
+    return this.http.delete<void>(`${API_URL}/plans/${id}`);
   }
 }

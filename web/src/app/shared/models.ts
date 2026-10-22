@@ -122,3 +122,46 @@ export interface Payment {
   paidDate: string | null;      // only set once it's Paid
   status: PaymentStatus;
 }
+
+// mirrors the API's generic PagedResult<T>: ONE page of a longer list + what a paginator needs.
+// GENERICS: the same shape works for any item type, PagedResult<Claim> today, PagedResult<Payment> tomorrow
+export interface PagedResult<T> {
+  items: T[];
+  page: number;          // 1-based (the API's). Material's paginator counts from 0, so the page converts
+  pageSize: number;
+  totalCount: number;    // across ALL pages, so the paginator can show "21 – 40 of 57"
+}
+
+// what the admin plan dialog sends for create AND update (mirrors SavePlanRequest; no isActive, retire is its own call)
+export interface SavePlanRequest {
+  name: string;
+  type: PlanType;
+  description: string | null;
+  monthlyPremium: number;
+  benefitPercent: number;      // a fraction: 0.60 = 60%
+  weeklyMaximum: number;
+  eliminationDays: number;
+}
+
+// body of PUT /api/admin/claims/{id}/status. whether the move is ALLOWED is decided by the API's workflow
+export interface UpdateClaimStatusRequest {
+  status: ClaimStatus;
+  note: string | null;         // shows up in the claim's history timeline
+}
+
+// body of PUT /api/admin/payments/{id}/status. paidOn left null = the API uses today
+export interface UpdatePaymentStatusRequest {
+  status: PaymentStatus;
+  paidOn: string | null;       // "yyyy-MM-dd"
+}
+
+// mirrors DashboardDto + StatusCountDto: every status is listed, zeros included
+export interface StatusCount {
+  status: ClaimStatus;
+  count: number;
+}
+
+export interface Dashboard {
+  totalClaims: number;
+  claimsByStatus: StatusCount[];
+}
