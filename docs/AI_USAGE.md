@@ -49,6 +49,7 @@ I wrote standing instructions in `CLAUDE.md` (project conventions, checked in) a
 - **Checks against a request that didn't exist (Day 5).** The AI listed Postman checks for a "Me" request it had never told me to create. This led to the explicit-steps rule.
 - **Confusing instructions.** Test steps for a new feature were numbered in a way that ran into the next build step, so I tried a dialog test as a member (who never sees that dialog). Test steps now name the role first.
 - **Bugs in AI-written code, caught by later reviews:** timestamps shown in the wrong time zone (the database returned dates without a UTC marker), a load failure shown as "you have no coverage", a dialog that could be closed mid-save (losing the result), and a plan form that wiped benefit terms when the type was toggled. All are fixed. Each one is a reminder that "it compiles and the happy path works" isn't the same as "it's right."
+- **Azure deploy zip (twice).** The AI's first two zip fixes still wrote Windows `\` paths, which Linux App Service rejected. The third was tested locally before I ran it.
 - **Verified instead of trusted.** Angular 22's new `@Service()` decorator looked like it could be a hallucination, so we checked that it exists in `@angular/core` before using it.
 
 ## What I caught that the AI didn't
