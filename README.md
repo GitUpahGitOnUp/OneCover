@@ -143,4 +143,14 @@ This project was built with Claude Code as a tutor and pair programmer. I hand-c
 
 ## Live demo
 
-Not deployed yet. Azure App Service + Azure SQL is the next step.
+**https://green-forest-08b794f0f.4.azurestaticapps.net** (demo logins above). The first request after a quiet period can take a few seconds while the database wakes up.
+
+| Piece | Azure service |
+|---|---|
+| Angular app | Static Web Apps (Free) |
+| API | App Service, Linux, .NET 10 (B1, Always On) |
+| Database | Azure SQL Database (serverless free offer, auto-pauses) |
+
+**Configuration and secrets:** the code is identical in every environment. App Service settings override `appsettings.json`: the connection string, `Jwt__Key`, `Cors__Origins__0` (the site's URL) and `Seed__DemoData=true` (seeds the demo accounts in production). No secret is in the repo. The API retries transient database errors (`EnableRetryOnFailure`), which covers the free database waking from auto-pause.
+
+**Access (IAM):** only my Azure account can manage these resources. The SQL firewall admits only Azure services and my own IP address. A production setup would add Key Vault for the secrets and a managed identity, so the API reaches SQL without a password.

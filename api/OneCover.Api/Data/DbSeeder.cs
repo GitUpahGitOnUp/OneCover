@@ -4,7 +4,8 @@
 // Concepts: static class (no state, never instantiated), async/await (AnyAsync, SaveChangesAsync = DB I/O),
 //           DI scopes (CreateScope + GetRequiredService = asking the container manually at startup),
 //           object initializers (new Plan { ... }), password hashing (salted, so seeded here, not w/ HasData)
-// Related:  Program.cs (calls SeedAsync, Development only), AppDbContext, Plan, User, Role/PlanType enums
+// Related:  Program.cs (calls SeedAsync in Development, or when Seed:DemoData is true, e.g. the Azure demo),
+//           AppDbContext, Plan, User, Role/PlanType enums
 // ─────────────────────────────────────────────────────────────────────────────────────────
 using Microsoft.EntityFrameworkCore;
 using OneCover.Api.Models;

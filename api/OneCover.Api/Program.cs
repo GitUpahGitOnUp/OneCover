@@ -30,9 +30,11 @@ builder.Services.AddControllers()
 
 builder.Services.AddOpenApi();
 
-// EF Core context, one per request, pointed at SQL Server via the connection string in appsettings
+// EF Core context, one per request, pointed at SQL Server via the connection string in appsettings.
+// EnableRetryOnFailure = retry TRANSIENT errors (a blip, or Azure SQL's free tier waking from auto-pause: error 40613)
+// a few times w/ growing delays, instead of failing the request. real errors (bad SQL, duplicate keys) aren't retried
 builder.Services.AddDbContext<AppDbContext>(o =>
-        o.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+        o.UseSqlServer(builder.Configuration.GetConnectionString("Default"), sql => sql.EnableRetryOnFailure()));
 
 // one shared clock for the whole app, injected so tests can swap in a fake "today"
 builder.Services.AddSingleton(TimeProvider.System);
@@ -93,9 +95,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 // authorization = are you allowed? (authentication above = who are you?)
 builder.Services.AddAuthorization();
 
-// CORS: let the Angular app (localhost:4200) call the API, which runs on a different origin (localhost:7020)
-builder.Services.AddCors(o => 
-        o.AddPolicy("web", p => p.WithOrigins("http://localhost:4200").AllowAnyHeader().AllowAnyMethod()));
+// CORS: let the Angular app call the API, which runs on a different origin.
+// the allowed origins come from CONFIGURATION, so the same code runs everywhere: appsettings.json has
+// localhost:4200 for dev, and Azure's App Service setting Cors__Origins__0 swaps in the Static Web App's URL
+var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
+builder.Services.AddCors(o =>
+        o.AddPolicy("web", p => p.WithOrigins(corsOrigins).AllowAnyHeader().AllowAnyMethod()));
 
 // everything above registers services, everything below sets up how requests are handled
 var app = builder.Build();
@@ -107,8 +112,9 @@ app.UseExceptionHandler();
 // turns any empty error response (like JWT middleware's bare 401) into a standard ProblemDetails body.
 app.UseStatusCodePages();
 
-// dev only: fill an empty DB with demo plans + users
-if (app.Environment.IsDevelopment())
+// fill an empty DB with demo plans + users: always in dev, and in production only when the Seed:DemoData setting
+// is true (the public Azure demo). safe to leave on: the seeder skips any table that already has data
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Seed:DemoData"))
 {
     await DbSeeder.SeedAsync(app.Services);
 }
