@@ -1,4 +1,19 @@
 // styles for the app shell (app.html) only. Angular scopes component styles, so these can't leak into pages
-.brand { color: inherit; text-decoration: none; font-weight: 600; margin-right: 24px; }   // the "OneCover" link
-.spacer { flex: 1 1 auto; }              // stretches to push "Log out" to the right edge of the toolbar
-.active { text-decoration: underline; }  // added by routerLinkActive to the link for the current page
+@use '@angular/material' as mat;
+
+// a teal accent line under the navy toolbar. nav buttons are white (Material's default text-button color is
+// the primary blue, which would vanish on navy), via a scoped token override
+.app-toolbar {
+  border-bottom: 3px solid var(--oc-teal);
+  @include mat.button-overrides((text-label-text-color: white));
+}
+
+// the logo + "OneCover" link
+.brand { display: inline-flex; align-items: center; gap: 8px; color: inherit; text-decoration: none; margin-right: 24px; }
+.word { font-size: 1.25rem; font-weight: 300; letter-spacing: 0.2px; }
+.word strong { font-weight: 500; }
+
+.spacer { flex: 1 1 auto; }   // stretches to push "Log out" to the right edge of the toolbar
+
+// added by routerLinkActive to the link for the current page: an orange bar along its bottom edge
+.active { box-shadow: inset 0 -3px 0 var(--oc-orange); border-radius: 0; }

@@ -15,11 +15,18 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { AuthService } from '../../core/auth.service';
+import { Logo } from '../../shared/logo';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule],
+  imports: [ReactiveFormsModule, RouterLink, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule, Logo],
   template: `
+    <div class="welcome">
+      <app-logo [size]="56" />
+      <h1>Welcome to One<strong>Cover</strong></h1>
+      <p>Enroll in benefits, file leave claims and track them, all in one place.</p>
+    </div>
+
     <mat-card class="form-card">
       <mat-card-header><mat-card-title>Log in</mat-card-title></mat-card-header>
       <mat-card-content>

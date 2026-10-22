@@ -15,11 +15,18 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { AuthService } from '../../core/auth.service';
+import { Logo } from '../../shared/logo';
 
 @Component({
   selector: 'app-register',
-  imports: [ReactiveFormsModule, RouterLink, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule],
+  imports: [ReactiveFormsModule, RouterLink, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule, Logo],
   template: `
+    <div class="welcome">
+      <app-logo [size]="56" />
+      <h1>Join One<strong>Cover</strong></h1>
+      <p>Create your member account to enroll in coverage.</p>
+    </div>
+
     <mat-card class="form-card">
       <mat-card-header><mat-card-title>Create an account</mat-card-title></mat-card-header>
       <mat-card-content>
