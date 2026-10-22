@@ -47,16 +47,14 @@ import { errorMessage } from '../../shared/problem-details';
               </mat-card>
             </a>
           </li>
-
         }
       </ul>
     } @else {
       <p>Loading dashboard…</p>
     }
   `,
-  // same light backgrounds as StatusBadge (dark text keeps WCAG AA contrast)
+  // same light backgrounds as StatusBadge (dark text keeps WCAG AA contrast). .heading is global (styles.scss)
   styles: `
-    .heading { display: flex; align-items: center; justify-content: space-between; }
     .total { color: var(--mat-sys-on-surface-variant); }
     .cards { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }
     .card { text-align: center; }

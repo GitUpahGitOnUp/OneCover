@@ -59,7 +59,7 @@ import { PlanDialog } from './plan-dialog';
           </td>
         </ng-container>
         <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef><span class="visually-hidden">Actions</span></th>
+          <th mat-header-cell *matHeaderCellDef><span class="cdk-visually-hidden">Actions</span></th>
           <td mat-cell *matCellDef="let p">
             <button mat-button type="button" [attr.aria-label]="'Edit ' + p.name" (click)="openDialog(p)">Edit</button>
             <button mat-button type="button" [attr.aria-label]="'Retire ' + p.name"
@@ -73,11 +73,6 @@ import { PlanDialog } from './plan-dialog';
         <tr mat-row *matRowDef="let row; columns: columns"></tr>
       </table>
     }
-  `,
-  styles: `
-    .heading { display: flex; align-items: center; justify-content: space-between; }
-    .hint { color: var(--mat-sys-on-surface-variant); }
-    .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   `,
 })
 export class PlansAdminPage {

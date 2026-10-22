@@ -46,6 +46,14 @@ public class PlanService(IPlanRepository plans) : IPlanService
     public async Task<PlanDto> UpdateAsync(int id, SavePlanRequest request)
     {
         var plan = await FindOrThrowAsync(id);
+
+        // a retired plan is closed for business: editing it would be invisible to members and could
+        // "resurrect" it in an admin's list (e.g. one admin retires it while another has the edit dialog open)
+        if (!plan.IsActive)
+        {
+            throw new BusinessRuleException("This plan has been retired and can't be edited.");
+        }
+
         request.ApplyTo(plan);
         await plans.SaveChangesAsync(); // the change tracker sees the edits and sends an UPDATE
 

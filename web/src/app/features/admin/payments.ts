@@ -3,8 +3,9 @@
 //           w/ "Mark paid" / "Mark failed" buttons on Pending rows
 // Layer:    features/admin (a page component)
 // Concepts: same load pattern as the claims queue (status SIGNAL -> toObservable -> switchMap cancels stale loads).
-//           IMMUTABLE UPDATE: after a save, signal.update() + map() builds a NEW array w/ the one changed row,
-//           so the signal sees a new reference and the table re-renders. per-row saving flag (savingId).
+//           IMMUTABLE UPDATE: after a save, signal.update() builds a NEW array (the changed row swapped in, or
+//           dropped if it no longer matches the filter), so the signal sees a new reference and the table re-renders.
+//           a SET of saving ids, so several rows can save at once w/o re-enabling each other's buttons.
 //           the buttons only appear on Pending rows, but the RULE lives in the API (Payment.MarkPaid/MarkFailed):
 //           a non-Pending payment, or a paid date in the future, comes back as a 400 -> snackbar
 // Related:  core/admin-payment.service.ts, shared/models.ts (Payment, PaymentStatus), shared/status-badge.ts,
@@ -77,15 +78,15 @@ import { errorMessage } from '../../shared/problem-details';
           </td>
         </ng-container>
         <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef><span class="visually-hidden">Actions</span></th>
+          <th mat-header-cell *matHeaderCellDef><span class="cdk-visually-hidden">Actions</span></th>
           <td mat-cell *matCellDef="let p">
             @if (p.status === 'Pending') {
               <!-- aria-label adds WHICH payment, so a screen reader doesn't hear 10 identical "Mark paid" buttons -->
-              <button mat-button type="button" [disabled]="savingId() === p.id"
+              <button mat-button type="button" [disabled]="savingIds().has(p.id)"
                       [attr.aria-label]="'Mark payment ' + p.id + ' paid'" (click)="mark(p, 'Paid')">
                 Mark paid
               </button>
-              <button mat-button type="button" [disabled]="savingId() === p.id"
+              <button mat-button type="button" [disabled]="savingIds().has(p.id)"
                       [attr.aria-label]="'Mark payment ' + p.id + ' failed'" (click)="mark(p, 'Failed')">
                 Mark failed
               </button>
@@ -100,7 +101,6 @@ import { errorMessage } from '../../shared/problem-details';
   `,
   styles: `
     .paid-on { font-size: 0.85em; color: var(--mat-sys-on-surface-variant); margin-top: 2px; }
-    .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   `,
 })
 export class AdminPaymentsPage {
@@ -114,7 +114,7 @@ export class AdminPaymentsPage {
   protected readonly payments = signal<Payment[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
-  protected readonly savingId = signal<number | null>(null);             // which row is being saved, if any
+  protected readonly savingIds = signal<ReadonlySet<number>>(new Set());   // rows w/ a save in flight
 
   constructor() {
     toObservable(this.status)
@@ -142,20 +142,36 @@ export class AdminPaymentsPage {
   }
 
   protected mark(payment: Payment, status: 'Paid' | 'Failed') {
-    this.savingId.set(payment.id);
+    this.setSaving(payment.id, true);
 
     // paidOn: null -> the API uses today (and refuses future dates)
     this.adminPayments.updateStatus(payment.id, { status, paidOn: null }).subscribe({
       next: updated => {
-        // swap in the API's version of this ONE row. map() returns a NEW array -> the signal notices the change
-        this.payments.update(list => list.map(p => (p.id === updated.id ? updated : p)));
-        this.savingId.set(null);
+        const filter = this.status();
+        this.payments.update(list =>
+          filter && updated.status !== filter
+            ? list.filter(p => p.id !== updated.id)                   // e.g. a Paid row leaves the "Pending" to-do list
+            : list.map(p => (p.id === updated.id ? updated : p)));    // "All statuses": swap in the API's version
+        this.setSaving(payment.id, false);
         this.snackBar.open(`Payment ${updated.id} marked ${updated.status.toLowerCase()}.`, 'OK', { duration: 4000 });
       },
       error: (err: unknown) => {
-        this.savingId.set(null);
+        this.setSaving(payment.id, false);
         this.snackBar.open(errorMessage(err, 'Could not update this payment.'), 'OK', { duration: 6000 });
       },
+    });
+  }
+
+  // add/remove one id, always building a NEW Set so the signal notices
+  private setSaving(id: number, saving: boolean) {
+    this.savingIds.update(ids => {
+      const next = new Set(ids);
+      if (saving) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+      return next;
     });
   }
 }

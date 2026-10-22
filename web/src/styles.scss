@@ -45,6 +45,12 @@ body {
 .full-width { width: 100%; }
 .error { color: var(--mat-sys-error); }
 
+// .heading = a page title w/ an action button on the right. .hint = quieter helper text under a title or field
+.heading { display: flex; align-items: center; justify-content: space-between; }
+.hint { color: var(--mat-sys-on-surface-variant); }
+
+// screen-reader-only text (e.g. an "Actions" column header) comes from Angular CDK's global .cdk-visually-hidden
+
 // .details = a label/value list (<dl>): labels in a snug left column, values beside them.
 // used on profile, claim detail and the file-claim review step, so it lives here once instead of 3 copies
 .details { display: grid; grid-template-columns: max-content 1fr; gap: 8px 24px; }

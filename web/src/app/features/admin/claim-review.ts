@@ -101,6 +101,9 @@ export class ClaimReviewPage {
         switchMap(id => {
           this.claim.set(null);
           this.error.set(null);
+          // a new claim starts w/ a clean form: a status picked for claim 3 must not carry over to claim 7
+          this.moveForm.reset();
+          this.saving.set(false);
           if (!Number.isInteger(id) || id <= 0) {
             this.error.set('Claim not found.');
             return EMPTY;
@@ -128,6 +131,9 @@ export class ClaimReviewPage {
     // a blank note is sent as null (the API also turns blank notes into null, belt and braces)
     this.adminClaims.updateStatus(id, { status: status!, note: note.trim() || null }).subscribe({
       next: updated => {
+        if (this.claim()?.id !== id) {
+          return;   // the admin navigated to another claim while this saved: don't show claim 3 on claim 7's page
+        }
         this.claim.set(updated);   // the API's version: new status, new history row, new nextStatuses
         this.moveForm.reset();
         this.saving.set(false);
@@ -135,7 +141,9 @@ export class ClaimReviewPage {
         this.snackBar.open(`Claim moved to ${statusLabel(updated.status)}.${extra}`, 'OK', { duration: 5000 });
       },
       error: (err: unknown) => {
-        this.saving.set(false);
+        if (this.claim()?.id === id) {
+          this.saving.set(false);   // only un-stick the button for the claim this request was for
+        }
         // e.g. "Can't move a claim from Approved to InReview." straight from ClaimWorkflow via BenefitClaim.MoveTo
         this.snackBar.open(errorMessage(err, 'Could not move this claim.'), 'OK', { duration: 6000 });
       },

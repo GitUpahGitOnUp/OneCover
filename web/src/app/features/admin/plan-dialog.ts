@@ -6,7 +6,10 @@
 //           the dialog SAVES the plan itself, so an API error shows here and the admin keeps what they typed.
 //           REACTIVE FORM mirroring SavePlanRequest's validation (validate at the edge, the API checks again).
 //           percent typed as a WHOLE number (60) and sent as a fraction (0.60): BenefitPercent is decimal(18,2),
-//           so 66.7% would be silently rounded. disability fields only show for STD/LTD (0 for everything else)
+//           so 66.7% would be silently rounded. disability fields only show for STD/LTD: for other types they're
+//           DISABLED (skipped by validation, values kept in case the type was a mis-click) and sent as 0.
+//           while saving, the dialog can't be closed (disableClose + Cancel disabled), so a save the server
+//           accepts always reaches the page
 // Related:  plans-admin.ts (opens it), core/plan.service.ts (create/update), shared/models.ts (Plan, SavePlanRequest),
 //           the API's SavePlanRequest + PlansController (POST / PUT /api/plans)
 // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -88,12 +91,11 @@ const WHOLE_NUMBER = /^\d+$/;   // digits only: no decimals, no minus sign
 
       <mat-dialog-actions align="end">
         <!-- mat-dialog-close = close w/o a result (afterClosed() emits undefined -> the page does nothing) -->
-        <button mat-button type="button" mat-dialog-close>Cancel</button>
+        <button mat-button type="button" mat-dialog-close [disabled]="saving()">Cancel</button>
         <button mat-flat-button type="submit" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save' }}</button>
       </mat-dialog-actions>
     </form>
   `,
-  styles: `.hint { color: var(--mat-sys-on-surface-variant); }`,
 })
 export class PlanDialog {
   private fb = inject(NonNullableFormBuilder);
@@ -127,13 +129,22 @@ export class PlanDialog {
   protected readonly isDisability = computed(() => this.type() === 'STD' || this.type() === 'LTD');
 
   constructor() {
-    // switching to a non-disability type zeroes the hidden fields, so a stale invalid value
-    // (e.g. 150%) can't block Save from a field the admin can no longer see
-    this.form.controls.type.valueChanges.pipe(takeUntilDestroyed()).subscribe(type => {
-      if (type !== 'STD' && type !== 'LTD') {
-        this.form.patchValue({ benefitPercent: 0, weeklyMaximum: 0, eliminationDays: 0 });
+    this.toggleDisabilityFields(this.form.controls.type.value);
+    this.form.controls.type.valueChanges.pipe(takeUntilDestroyed()).subscribe(type => this.toggleDisabilityFields(type));
+  }
+
+  // hidden fields are DISABLED, not zeroed: a disabled control is skipped by validation (a stale 150% can't block
+  // Save from a field nobody can see), and its value survives, so STD -> Life -> STD doesn't wipe the plan's terms
+  private toggleDisabilityFields(type: PlanType | null) {
+    const disability = type === 'STD' || type === 'LTD';
+    for (const name of ['benefitPercent', 'weeklyMaximum', 'eliminationDays'] as const) {
+      const control = this.form.controls[name];
+      if (disability) {
+        control.enable({ emitEvent: false });
+      } else {
+        control.disable({ emitEvent: false });
       }
-    });
+    }
   }
 
   protected save() {
@@ -141,19 +152,23 @@ export class PlanDialog {
       this.form.markAllAsTouched();   // reveal every field's error at once
       return;
     }
-    const v = this.form.getRawValue();
+    const v = this.form.getRawValue();   // "raw" = includes the disabled fields too
+    const disability = this.isDisability();
     const request: SavePlanRequest = {
       name: v.name.trim(),
       type: v.type!,
       description: v.description.trim() || null,
       monthlyPremium: v.monthlyPremium!,
-      benefitPercent: v.benefitPercent / 100,   // 60 -> 0.6
-      weeklyMaximum: v.weeklyMaximum,
-      eliminationDays: v.eliminationDays,
+      // non-disability plans store 0 for the benefit terms (the API's convention)
+      benefitPercent: disability ? v.benefitPercent / 100 : 0,   // 60 -> 0.6
+      weeklyMaximum: disability ? v.weeklyMaximum : 0,
+      eliminationDays: disability ? v.eliminationDays : 0,
     };
 
     this.saving.set(true);
     this.error.set(null);
+    // Esc / backdrop click can't close the dialog mid-save (the Cancel button is disabled in the template)
+    this.dialogRef.disableClose = true;
 
     // same form, two endpoints: PUT when editing, POST when adding. both return the saved Plan
     // $ === naming convention for 'this is an observable'
@@ -162,6 +177,7 @@ export class PlanDialog {
       next: saved => this.dialogRef.close(saved),   // hand it back to the page
       error: (err: unknown) => {
         this.saving.set(false);
+        this.dialogRef.disableClose = false;   // closable again
         this.error.set(errorMessage(err, 'Could not save the plan.'));   // stays open, nothing typed is lost
       },
     });
