@@ -6,7 +6,9 @@
 //           two REACTIVE FORMS (one per step), CROSS-FIELD validators on the dates group, SIGNALS for page state.
 //           toSignal() turns the radio's valueChanges OBSERVABLE into a signal, so selectedEnrollment is a COMPUTED
 //           (cached, recalculated only when the pick changes). the start date must be on/after that coverage's start:
-//           [min] guides the picker, a VALIDATOR actually blocks typed dates (both mirror BenefitClaim.Submit).
+//           [min] greys out earlier days in the calendar, a VALIDATOR blocks typed ones (both mirror BenefitClaim.Submit).
+//           Material DATEPICKER (type a date or pick it from a calendar) w/ the native date adapter: the form holds
+//           Date objects, converted to the API's "yyyy-MM-dd" with toIsoDate on submit.
 //           an effect() re-checks the start date whenever the picked coverage changes.
 //           Submit disabled while the request is in flight -> no duplicate claims from a double-click
 // Related:  core/claim.service.ts, core/enrollment.service.ts, shared/validators.ts,
@@ -23,19 +25,25 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ClaimService } from '../../core/claim.service';
 import { EnrollmentService } from '../../core/enrollment.service';
 import { Claim, Enrollment } from '../../shared/models';
 import { endAfterStart, startOnOrAfter, withinOneYear } from '../../shared/validators';
 import { errorMessage } from '../../shared/problem-details';
+import { fromIsoDate, toIsoDate } from '../../shared/dates';
 
 @Component({
   selector: 'app-file-claim',
   imports: [
     CurrencyPipe, DatePipe, ReactiveFormsModule, RouterLink, MatStepperModule, MatRadioModule,
-    MatFormFieldModule, MatInputModule, MatButtonModule, MatCardModule,
+    MatFormFieldModule, MatInputModule, MatButtonModule, MatCardModule, MatDatepickerModule,
   ],
+  // the datepicker needs a DateAdapter (how to read/format dates). the native one uses plain JS Date objects.
+  // provided HERE (DI at the component level), so only this page carries it
+  providers: [provideNativeDateAdapter()],
   template: `
     <h1>File a claim</h1>
 
@@ -87,13 +95,20 @@ import { errorMessage } from '../../shared/problem-details';
           <form [formGroup]="detailsForm">
             <mat-form-field class="full-width">
               <mat-label>First day of leave</mat-label>
-              <input matInput type="date" formControlName="startDate" [min]="selectedEnrollment()?.enrolledOn ?? ''" />
-              @if (selectedEnrollment(); as e) {
-                <mat-hint>Your coverage began {{ e.enrolledOn | date: 'mediumDate' : 'UTC' }}.</mat-hint>
-              }
+              <!-- type a date (MM/DD/YYYY) or click the calendar button; days before coverage are greyed out -->
+              <input matInput [matDatepicker]="startPicker" formControlName="startDate" [min]="minStart()" />
+              <mat-datepicker-toggle matIconSuffix [for]="startPicker" />
+              <mat-datepicker #startPicker />
+              <mat-hint>
+                MM/DD/YYYY
+                @if (selectedEnrollment(); as e) { · coverage began {{ e.enrolledOn | date: 'mediumDate' : 'UTC' }} }
+              </mat-hint>
               <!-- one mat-error, message picked by WHICH error the control has -->
               <mat-error>
-                @if (detailsForm.controls.startDate.hasError('beforeCoverage')) {
+                @if (detailsForm.controls.startDate.hasError('matDatepickerParse')) {
+                  Enter a valid date (MM/DD/YYYY).
+                } @else if (detailsForm.controls.startDate.hasError('beforeCoverage')
+                            || detailsForm.controls.startDate.hasError('matDatepickerMin')) {
                   The first day can't be before your coverage began.
                 } @else {
                   Start date is required.
@@ -103,8 +118,21 @@ import { errorMessage } from '../../shared/problem-details';
 
             <mat-form-field class="full-width">
               <mat-label>Last day of leave</mat-label>
-              <input matInput type="date" formControlName="endDate" />
-              <mat-error>End date is required.</mat-error>
+              <!-- the calendar starts at the first day of leave, so an earlier end can't be picked -->
+              <input matInput [matDatepicker]="endPicker" formControlName="endDate"
+                     [min]="detailsForm.controls.startDate.value" />
+              <mat-datepicker-toggle matIconSuffix [for]="endPicker" />
+              <mat-datepicker #endPicker />
+              <mat-hint>MM/DD/YYYY</mat-hint>
+              <mat-error>
+                @if (detailsForm.controls.endDate.hasError('matDatepickerParse')) {
+                  Enter a valid date (MM/DD/YYYY).
+                } @else if (detailsForm.controls.endDate.hasError('matDatepickerMin')) {
+                  The last day can't be before the first day.
+                } @else {
+                  End date is required.
+                }
+              </mat-error>
             </mat-form-field>
 
             <!-- a GROUP-level error (from endAfterStart) isn't tied to one field, so it's shown here, not in mat-error -->
@@ -134,8 +162,9 @@ import { errorMessage } from '../../shared/problem-details';
             <dt>Coverage</dt><dd>{{ selectedEnrollment()?.planName }}</dd>
             <dt>Dates</dt>
             <dd>
-              {{ detailsForm.controls.startDate.value | date: 'mediumDate' : 'UTC' }} –
-              {{ detailsForm.controls.endDate.value | date: 'mediumDate' : 'UTC' }}
+              <!-- these are local Date objects now (from the datepicker), so NO 'UTC' here: it would shift them a day -->
+              {{ detailsForm.controls.startDate.value | date: 'mediumDate' }} –
+              {{ detailsForm.controls.endDate.value | date: 'mediumDate' }}
             </dd>
             <dt>Reason</dt><dd>{{ detailsForm.controls.reason.value }}</dd>
           </dl>
@@ -185,12 +214,18 @@ export class FileClaimPage {
   protected readonly selectedEnrollment = computed(() =>
     this.activeEnrollments().find(e => e.id === this.enrollmentId()));
 
-  // step 2's form: dates + reason. the date-pair rules are GROUP validators (they compare two fields);
-  // startOnOrAfter is on the one control, and reads the current minimum each time it runs
+  // the coverage start as a Date, for the start picker's [min] (greys out earlier days in the calendar)
+  protected readonly minStart = computed(() => {
+    const enrolledOn = this.selectedEnrollment()?.enrolledOn;
+    return enrolledOn ? fromIsoDate(enrolledOn) : null;
+  });
+
+  // step 2's form: dates + reason. the dates hold Date objects (from the datepicker). the date-pair rules are
+  // GROUP validators (they compare two fields); startOnOrAfter is on the one control and reads the current minimum
   protected readonly detailsForm = this.fb.group(
     {
-      startDate: ['', [Validators.required, startOnOrAfter(() => this.selectedEnrollment()?.enrolledOn)]],
-      endDate: ['', Validators.required],
+      startDate: [null as Date | null, [Validators.required, startOnOrAfter(() => this.selectedEnrollment()?.enrolledOn)]],
+      endDate: [null as Date | null, Validators.required],
       reason: ['', [Validators.required, Validators.maxLength(1000)]],
     },
     { validators: [endAfterStart, withinOneYear] },
@@ -227,7 +262,13 @@ export class FileClaimPage {
 
     const { startDate, endDate, reason } = this.detailsForm.getRawValue();   // destructuring: pull out 3 values at once
     this.claimService
-      .submit({ enrollmentId: this.coverageForm.getRawValue().enrollmentId!, reason, startDate, endDate })
+      .submit({
+        enrollmentId: this.coverageForm.getRawValue().enrollmentId!,
+        reason,
+        // Date -> "yyyy-MM-dd" (the API's DateOnly format), using the LOCAL day the member picked
+        startDate: toIsoDate(startDate)!,
+        endDate: toIsoDate(endDate)!,
+      })
       .subscribe({
         next: claim => {
           this.submitted.set(claim);   // switch to the success panel
